@@ -18,14 +18,17 @@ def _trainer_row() -> dict:
     """Return the trainers table row for the current user, or abort 403."""
     user = current_user()
     db   = get_service_client()
-    row  = (db.table("trainers")
-              .select("*")
-              .eq("user_id", user["id"])
-              .single()
-              .execute().data)
-    if not row:
+    try:
+        rows = (db.table("trainers")
+                  .select("*")
+                  .eq("user_id", user["id"])
+                  .limit(1)
+                  .execute().data or [])
+        if not rows:
+            abort(403)
+        return rows[0]
+    except Exception:
         abort(403)
-    return row
 
 
 # ── Dashboard (attendance capture) ───────────────────────────────────────────
@@ -234,7 +237,6 @@ def view_attendance():
                      .eq("lesson", lesson)
                      .eq("year", year)
                      .eq("term", term)
-                     .order("students(admission_number)")
                      .execute().data or [])
 
     return render_template("lecturer/view_attendance.html",

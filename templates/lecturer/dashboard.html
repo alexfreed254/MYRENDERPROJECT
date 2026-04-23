@@ -49,9 +49,9 @@
   </div>
   <div class="topnav-right">
     <span><i class="fas fa-user"></i> {{ trainer.name }}</span>
-    <a href="/lecturer/trainee_search" class="topnav-btn"><i class="fas fa-search"></i> Search Trainee</a>
+    <a href="/lecturer/trainee-search" class="topnav-btn"><i class="fas fa-search"></i> Search Trainee</a>
     <a href="/lecturer/select_department" class="topnav-btn"><i class="fas fa-exchange-alt"></i> Change Dept</a>
-    <a href="/lecturer/logout" class="topnav-btn danger"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    <a href="/auth/logout" class="topnav-btn danger"><i class="fas fa-sign-out-alt"></i> Logout</a>
   </div>
 </nav>
 
@@ -77,7 +77,7 @@
         <select id="unitSelect" class="form-control" onchange="onFilterChange()">
           <option value="">-- Choose Unit --</option>
           {% for u in units_list %}
-            <option value="{{ u.unit_id }}" {% if unit_id == u.unit_id %}selected{% endif %}>{{ u.code }} — {{ u.name }}</option>
+            <option value="{{ u.units.id }}" {% if unit_id == u.units.id %}selected{% endif %}>{{ u.units.code }} — {{ u.units.name }}</option>
           {% endfor %}
         </select>
       </div>
@@ -140,7 +140,7 @@
         recorded for Week {{ active_event.week }} {{ active_event.lesson }}
         {% if active_event.note %} &mdash; {{ active_event.note }}{% endif %}
       </span>
-      <form method="post" action="/lecturer/delete_event" style="display:inline;" onsubmit="return confirm('Remove this event record?');">
+      <form method="post" action="/lecturer/delete-event" style="display:inline;" onsubmit="return confirm('Remove this event record?');">
         <input type="hidden" name="event_id" value="{{ active_event.id }}">
         <input type="hidden" name="class_id" value="{{ class_id }}">
         <input type="hidden" name="unit_id"  value="{{ unit_id }}">
@@ -254,7 +254,7 @@
     var w = document.getElementById('weekSelect').value;
     var l = document.getElementById('lessonSelect').value;
     if (!c || !u || !w || !l) { alert('Please select Class, Unit, Week and Lesson first.'); return; }
-    window.location = '/lecturer/view_attendance?class_id=' + c + '&unit_id=' + u +
+    window.location = '/lecturer/view-attendance?class_id=' + c + '&unit_id=' + u +
       '&week=' + w + '&lesson=' + encodeURIComponent(l) +
       '&year=' + document.getElementById('yearSelect').value +
       '&term=' + document.getElementById('termSelect').value;
@@ -295,7 +295,7 @@
     var form = new FormData(this);
     var btn = document.getElementById('evSubmitBtn');
     btn.disabled = true; btn.textContent = 'Saving...';
-    fetch('/lecturer/mark_event', { method: 'POST', body: form })
+    fetch('/lecturer/mark-event', { method: 'POST', body: form })
       .then(r => r.json())
       .then(resp => {
         btn.disabled = false; btn.textContent = 'Save';
@@ -341,7 +341,7 @@
     });
     if (!any) { showMsg('No attendance recorded.', 'error'); return; }
     spinner.style.display = 'block';
-    fetch('/lecturer/submit_attendance', { method: 'POST', body: form })
+    fetch('/lecturer/submit-attendance', { method: 'POST', body: form })
       .then(r => r.json().catch(() => ({ success: false, message: 'Invalid response' })))
       .then(resp => {
         spinner.style.display = 'none';

@@ -7,76 +7,64 @@
   <link rel="stylesheet" href="/static/css/base.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
+    body { background:#f4f4f4; font-family:'Segoe UI',sans-serif; }
     .topbar { background:linear-gradient(135deg,#1e5a9f,#2e75b6); color:#fff; padding:12px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
     .topbar a { color:#fff; text-decoration:none; padding:7px 14px; border-radius:6px; background:rgba(255,255,255,0.2); font-size:13px; font-weight:600; }
     .topbar a:hover { background:rgba(255,255,255,0.35); }
     .page { max-width:1000px; margin:24px auto; padding:0 16px; }
-    .info-bar { background:#f0f7ff; border-radius:8px; padding:14px 18px; margin-bottom:20px; font-size:14px; color:#333; display:flex; flex-wrap:wrap; gap:16px; }
+    .card { background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.06); margin-bottom:20px; overflow:hidden; }
+    .card-header { background:#1e5a9f; color:#fff; padding:13px 20px; font-size:14px; font-weight:600; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+    .card-body { padding:20px; }
+    .info-bar { background:#e3f2fd; border-radius:8px; padding:14px 18px; margin-bottom:20px; display:flex; flex-wrap:wrap; gap:16px; font-size:13px; }
     .info-bar strong { color:#1e5a9f; }
-    .status-present { color:#28a745; font-weight:700; }
-    .status-absent  { color:#dc3545; font-weight:700; }
-    .action-btns { display:flex; gap:6px; flex-wrap:wrap; }
-    select.inline { padding:5px 8px; border:1px solid #ccc; border-radius:5px; font-size:13px; cursor:pointer; }
-    .danger-zone { background:#fff5f5; border:1px solid #ffcdd2; border-radius:8px; padding:16px 18px; margin-bottom:20px; }
-    .danger-zone h4 { color:#c62828; margin-bottom:10px; font-size:15px; }
-    .unmarked-section { background:#fffde7; border:1px solid #fff176; border-radius:8px; padding:16px 18px; margin-bottom:20px; }
-    .unmarked-section h4 { color:#f57f17; margin-bottom:12px; font-size:15px; }
-    .unmarked-row { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid #fff9c4; flex-wrap:wrap; }
-    .unmarked-row:last-child { border-bottom:none; }
+    table { width:100%; border-collapse:collapse; }
+    th { background:#f5f5f5; padding:10px 14px; text-align:left; font-size:12px; color:#555; border-bottom:2px solid #eee; }
+    td { padding:10px 14px; border-bottom:1px solid #f0f0f0; font-size:13px; vertical-align:middle; }
+    .badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; }
+    .badge-present { background:#e8f5e9; color:#2e7d32; }
+    .badge-absent  { background:#ffebee; color:#c62828; }
+    .btn { padding:7px 14px; border:none; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600; }
+    .btn-primary { background:#1e5a9f; color:#fff; }
+    .btn-success { background:#2e7d32; color:#fff; }
+    .btn-warning { background:#f57c00; color:#fff; }
+    .btn-danger  { background:#c62828; color:#fff; }
+    .action-row  { display:flex; gap:6px; flex-wrap:wrap; }
   </style>
 </head>
 <body>
+
 <div class="topbar">
-  <a href="/lecturer/dashboard?class_id={{ class_id }}&unit_id={{ unit_id }}&week={{ week }}&lesson={{ lesson }}">← Back to Dashboard</a>
-  <span>{{ trainer.name }}</span>
-  <a href="/lecturer/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  <a href="/lecturer/dashboard?class_id={{ class_id }}&unit_id={{ unit_id }}&week={{ week }}&lesson={{ lesson }}&year={{ year }}&term={{ term }}">
+    <i class="fas fa-arrow-left"></i> Back to Dashboard
+  </a>
+  <span><i class="fas fa-user"></i> {{ trainer.name }}</span>
+  <a href="/auth/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
 </div>
 
 <div class="page">
 
-  {% if cls and unit %}
+  <!-- Info bar -->
+  {% if class_id and unit_id %}
   <div class="info-bar">
-    <span><strong>Class:</strong> {{ cls.name }}</span>
-    <span><strong>Unit:</strong> {{ unit.code }} — {{ unit.name }}</span>
     <span><strong>Week:</strong> {{ week }}</span>
     <span><strong>Lesson:</strong> {{ lesson }}</span>
     <span><strong>Year:</strong> {{ year }}</span>
-    <span><strong>Term:</strong> Term {{ term }} ({% if term == 1 %}Jan–Apr{% elif term == 2 %}May–Aug{% else %}Sep–Dec{% endif %})</span>
-    {% if dept %}<span><strong>Dept:</strong> {{ dept.name }}</span>{% endif %}
+    <span><strong>Term:</strong> Term {{ term }}</span>
+    <span><strong>Records:</strong> {{ records|length }}</span>
   </div>
   {% endif %}
 
   {% if records %}
-
-  <!-- ── Delete whole lesson ─────────────────────────────────────────── -->
-  <div class="danger-zone">
-    <h4><i class="fas fa-exclamation-triangle"></i> Danger Zone</h4>
-    <form method="post" action="/lecturer/delete_lesson_attendance"
-          onsubmit="return confirm('Delete ALL attendance for this lesson? This cannot be undone.');">
-      <input type="hidden" name="unit_id"  value="{{ unit_id }}">
-      <input type="hidden" name="week"     value="{{ week }}">
-      <input type="hidden" name="lesson"   value="{{ lesson }}">
-      <input type="hidden" name="class_id" value="{{ class_id }}">
-              <input type="hidden" name="year" value="{{ year }}">
-              <input type="hidden" name="term" value="{{ term }}">
-      <button type="submit" class="btn btn-danger">
-        <i class="fas fa-trash-alt"></i> Delete Entire Lesson Attendance
-      </button>
-    </form>
-  </div>
-
-  <!-- ── Attendance table with edit/delete per row ──────────────────── -->
-  <div class="card" style="margin-bottom:20px;">
-    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-      <span><i class="fas fa-clipboard-list"></i> Attendance Records ({{ records|length }} students)</span>
-      <a href="/lecturer/download_attendance_pdf?class_id={{ class_id }}&unit_id={{ unit_id }}&week={{ week }}&lesson={{ lesson }}&year={{ year }}&term={{ term }}"
-         class="btn btn-success btn-sm" target="_blank"><i class="fas fa-file-pdf"></i> Download PDF</a>
+  <div class="card">
+    <div class="card-header">
+      <span><i class="fas fa-clipboard-list"></i> Attendance Records</span>
     </div>
-    <div class="table-wrap">
+    <div style="overflow-x:auto">
       <table>
         <thead>
           <tr>
-            <th>Adm No</th>
+            <th>#</th>
+            <th>Adm No.</th>
             <th>Student Name</th>
             <th>Status</th>
             <th>Date</th>
@@ -86,53 +74,28 @@
         <tbody>
           {% for r in records %}
           <tr>
-            <td>{{ r.admission_number }}</td>
-            <td>{{ r.full_name }}</td>
+            <td style="color:#aaa">{{ loop.index }}</td>
+            <td>{{ r.students.admission_number if r.students else '—' }}</td>
+            <td><strong>{{ r.students.full_name if r.students else '—' }}</strong></td>
             <td>
-              <span class="status-{{ r.status | lower }}">
-                {% if r.status == 'Present' %}✓ Present{% else %}✗ Absent{% endif %}
+              <span class="badge badge-{{ r.status }}">
+                {{ 'Present' if r.status == 'present' else 'Absent' }}
               </span>
             </td>
-            <td style="font-size:12px;color:#888;">
-              {% if r.attendance_date %}{{ r.attendance_date.strftime('%d %b %Y, %H:%M') }}{% else %}-{% endif %}
+            <td style="font-size:12px;color:#888;white-space:nowrap">
+              {{ r.attendance_date[:16].replace('T',' ') if r.attendance_date else '—' }}
             </td>
             <td>
-              <div class="action-btns">
-                <!-- Toggle status -->
-                <form method="post" action="/lecturer/update_attendance" style="display:inline;">
-                  <input type="hidden" name="att_id"   value="{{ r.id }}">
-                  <input type="hidden" name="class_id" value="{{ class_id }}">
-              <input type="hidden" name="year" value="{{ year }}">
-              <input type="hidden" name="term" value="{{ term }}">
-                  <input type="hidden" name="unit_id"  value="{{ unit_id }}">
-                  <input type="hidden" name="week"     value="{{ week }}">
-                  <input type="hidden" name="lesson"   value="{{ lesson }}">
-                  <input type="hidden" name="status"
-                    value="{% if r.status == 'Present' %}Absent{% else %}Present{% endif %}">
-                  <button type="submit" class="btn btn-sm"
-                    style="background:{% if r.status == 'Present' %}#f39c12{% else %}#27ae60{% endif %};color:#fff;"
-                    title="Toggle to {% if r.status == 'Present' %}Absent{% else %}Present{% endif %}">
-                    {% if r.status == 'Present' %}
-                      <i class="fas fa-times"></i> Mark Absent
-                    {% else %}
-                      <i class="fas fa-check"></i> Mark Present
-                    {% endif %}
-                  </button>
-                </form>
-                <!-- Delete single record -->
-                <form method="post" action="/lecturer/delete_attendance" style="display:inline;"
-                      onsubmit="return confirm('Delete attendance for {{ r.full_name }}?');">
-                  <input type="hidden" name="att_id"   value="{{ r.id }}">
-                  <input type="hidden" name="class_id" value="{{ class_id }}">
-              <input type="hidden" name="year" value="{{ year }}">
-              <input type="hidden" name="term" value="{{ term }}">
-                  <input type="hidden" name="unit_id"  value="{{ unit_id }}">
-                  <input type="hidden" name="week"     value="{{ week }}">
-                  <input type="hidden" name="lesson"   value="{{ lesson }}">
-                  <button type="submit" class="btn btn-danger btn-sm" title="Delete this record">
-                    <i class="fas fa-trash"></i>
-                  </button>
-                </form>
+              <div class="action-row">
+                <!-- Toggle status via AJAX -->
+                <button onclick="toggleStatus({{ r.id }}, '{{ r.status }}', this)"
+                        class="btn {% if r.status == 'present' %}btn-warning{% else %}btn-success{% endif %}">
+                  {% if r.status == 'present' %}
+                    <i class="fas fa-times"></i> Mark Absent
+                  {% else %}
+                    <i class="fas fa-check"></i> Mark Present
+                  {% endif %}
+                </button>
               </div>
             </td>
           </tr>
@@ -143,53 +106,39 @@
   </div>
 
   {% else %}
-  <div class="card" style="margin-bottom:20px;">
-    <div class="card-body" style="text-align:center;color:#888;padding:30px;">
-      <i class="fas fa-clipboard" style="font-size:36px;margin-bottom:10px;display:block;"></i>
-      No attendance records found for this selection.
-    </div>
-  </div>
-  {% endif %}
-
-  <!-- ── Add missed / forgotten students ────────────────────────────── -->
-  {% if all_students %}
-  <div class="unmarked-section">
-    <h4><i class="fas fa-user-plus"></i> Add Missed Students ({{ all_students|length }} not yet marked)</h4>
-    {% for s in all_students %}
-    <div class="unmarked-row">
-      <span style="min-width:100px;font-size:13px;color:#555;">{{ s.admission_number }}</span>
-      <span style="flex:1;font-size:14px;font-weight:600;">{{ s.full_name }}</span>
-      <form method="post" action="/lecturer/add_attendance" style="display:flex;gap:6px;align-items:center;">
-        <input type="hidden" name="student_id" value="{{ s.id }}">
-        <input type="hidden" name="unit_id"    value="{{ unit_id }}">
-        <input type="hidden" name="week"       value="{{ week }}">
-        <input type="hidden" name="lesson"     value="{{ lesson }}">
-        <input type="hidden" name="class_id"   value="{{ class_id }}">
-        <select name="status" class="inline">
-          <option value="Present">Present</option>
-          <option value="Absent">Absent</option>
-        </select>
-        <button type="submit" class="btn btn-primary btn-sm">
-          <i class="fas fa-plus"></i> Add
-        </button>
-      </form>
-    </div>
-    {% endfor %}
-  </div>
-  {% elif class_id and unit_id and week and lesson %}
-  <div style="background:#e8f5e9;border-radius:8px;padding:14px 18px;font-size:14px;color:#2e7d32;">
-    <i class="fas fa-check-circle"></i> All students in this class have been marked.
-  </div>
-  {% endif %}
-
-  {% if not (class_id and unit_id and week and lesson) %}
   <div class="card">
-    <div class="card-body" style="text-align:center;color:#888;padding:30px;">
-      Please go back to the dashboard and select Class, Unit, Week and Lesson to view attendance.
+    <div class="card-body" style="text-align:center;color:#aaa;padding:40px;">
+      <i class="fas fa-clipboard-list" style="font-size:40px;display:block;margin-bottom:14px;opacity:0.3;"></i>
+      {% if class_id and unit_id and week and lesson %}
+        No attendance records found for this session.
+      {% else %}
+        Please go back and select Class, Unit, Week and Lesson.
+      {% endif %}
     </div>
   </div>
   {% endif %}
 
 </div>
+
+<script>
+function toggleStatus(attId, currentStatus, btn) {
+  var newStatus = currentStatus === 'present' ? 'absent' : 'present';
+  var form = new FormData();
+  form.append('att_id', attId);
+  form.append('status', newStatus);
+  btn.disabled = true;
+  fetch('/lecturer/update-attendance', { method: 'POST', body: form })
+    .then(r => r.json())
+    .then(resp => {
+      if (resp.success) {
+        window.location.reload();
+      } else {
+        alert(resp.message || 'Update failed');
+        btn.disabled = false;
+      }
+    })
+    .catch(() => { alert('Network error'); btn.disabled = false; });
+}
+</script>
 </body>
 </html>
