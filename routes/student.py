@@ -225,3 +225,59 @@ def unit_detail():
                            total=total,
                            pct=pct,
                            info=info)
+
+
+# ── Unit Report PDF ───────────────────────────────────────────────────────────
+
+@student_bp.route("/unit-report-pdf")
+@student_required
+def unit_report_pdf():
+    db      = get_service_client()
+    student = _student_row()
+    unit_id = request.args.get("unit_id", type=int)
+
+    if not unit_id:
+        return redirect(url_for("student.dashboard"))
+
+    try:
+        unit_rows = (db.table("units").select("*").eq("id", unit_id)
+                       .limit(1).execute().data or [])
+        unit = unit_rows[0] if unit_rows else {}
+    except Exception:
+        unit = {}
+
+    try:
+        records = (db.table("attendance")
+                     .select("*")
+                     .eq("student_id", student["id"])
+                     .eq("unit_id", unit_id)
+                     .order("year").order("term").order("week").order("lesson")
+                     .execute().data or [])
+    except Exception:
+        records = []
+
+    attended = sum(1 for r in records if r["status"] == "present")
+    absent   = sum(1 for r in records if r["status"] == "absent")
+    total    = len(records)
+    pct      = round((attended / total) * 100, 1) if total else 0
+
+    cls  = student.get("classes") or {}
+    dept = cls.get("departments") or {}
+    info = {
+        "class_name": cls.get("name", "—"),
+        "dept_name":  dept.get("name", "—"),
+    }
+
+    term_label = {1: "Term 1 (Jan–Apr)", 2: "Term 2 (May–Aug)", 3: "Term 3 (Sep–Dec)"}
+
+    return render_template("student/unit_report_pdf.html",
+                           student=student,
+                           unit=unit,
+                           records=records,
+                           attended=attended,
+                           absent=absent,
+                           total=total,
+                           pct=pct,
+                           info=info,
+                           term_label=term_label,
+                           date_gen=now_eat().strftime("%d %b %Y, %H:%M"))
