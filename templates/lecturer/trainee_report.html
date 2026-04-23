@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Trainee Report | TTTTI</title>
+  <link rel="stylesheet" href="/static/css/base.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { background:#f4f4f4; font-family:'Segoe UI',sans-serif; }
+    .topbar { background:linear-gradient(135deg,#1e5a9f,#2e75b6); color:#fff; padding:12px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+    .topbar a { color:#fff; text-decoration:none; padding:7px 14px; border-radius:6px; background:rgba(255,255,255,0.2); font-size:13px; font-weight:600; }
+    .topbar a:hover { background:rgba(255,255,255,0.35); }
+    .page { max-width:960px; margin:24px auto; padding:0 16px; }
+    .card { background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.06); margin-bottom:20px; overflow:hidden; }
+    .card-header { background:#1e5a9f; color:#fff; padding:13px 20px; font-size:14px; font-weight:600; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+    .card-body { padding:20px; }
+    .student-info { background:#e3f2fd; border-radius:10px; padding:16px 20px; margin-bottom:20px; display:flex; flex-wrap:wrap; gap:16px; align-items:center; justify-content:space-between; }
+    .student-info h3 { font-size:18px; color:#1e5a9f; margin:0; }
+    .student-info span { font-size:13px; color:#555; }
+    .btn { padding:8px 16px; border:none; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:6px; }
+    .btn-pdf { background:#c62828; color:#fff; }
+    .btn-back { background:rgba(255,255,255,0.2); color:#fff; }
+    .unit-block { border:1px solid #e0e0e0; border-radius:10px; margin-bottom:16px; overflow:hidden; }
+    .unit-header { background:#f5f5f5; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; cursor:pointer; }
+    .unit-header strong { color:#1e5a9f; font-size:14px; }
+    .unit-stats { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+    .stat-chip { padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; }
+    .chip-present { background:#e8f5e9; color:#2e7d32; }
+    .chip-absent  { background:#ffebee; color:#c62828; }
+    .chip-pct-high { background:#e8f5e9; color:#2e7d32; }
+    .chip-pct-med  { background:#fff3e0; color:#f57c00; }
+    .chip-pct-low  { background:#ffebee; color:#c62828; }
+    .progress-bar { height:8px; background:#eee; border-radius:4px; overflow:hidden; width:100px; }
+    .progress-fill { height:100%; border-radius:4px; }
+    table { width:100%; border-collapse:collapse; }
+    th { background:#fafafa; padding:9px 14px; text-align:left; font-size:12px; color:#555; border-bottom:1px solid #eee; }
+    td { padding:9px 14px; border-bottom:1px solid #f5f5f5; font-size:13px; }
+    .badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; }
+    .badge-present { background:#e8f5e9; color:#2e7d32; }
+    .badge-absent  { background:#ffebee; color:#c62828; }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="/lecturer/trainee-search?q={{ query }}"><i class="fas fa-arrow-left"></i> Back to Search</a>
+  <span><i class="fas fa-user"></i> {{ trainer.name }}</span>
+  <a href="/lecturer/trainee-report-pdf?student_id={{ student_id }}" target="_blank" class="btn btn-pdf">
+    <i class="fas fa-file-pdf"></i> Download PDF
+  </a>
+</div>
+
+<div class="page">
+
+  <!-- Student info -->
+  <div class="student-info">
+    <div>
+      <h3><i class="fas fa-user-graduate"></i> {{ student.full_name }}</h3>
+      <span><i class="fas fa-id-card"></i> {{ student.admission_number }}</span>
+      <span style="margin-left:16px;"><i class="fas fa-door-open"></i> {{ student.classes.name if student.classes else '—' }}</span>
+    </div>
+    <a href="/lecturer/trainee-report-pdf?student_id={{ student_id }}" target="_blank" class="btn btn-pdf">
+      <i class="fas fa-file-pdf"></i> Download Full PDF Report
+    </a>
+  </div>
+
+  {% if units_summary %}
+    {% for u in units_summary %}
+    {% set pct_class = 'chip-pct-high' if u.pct >= 75 else ('chip-pct-med' if u.pct >= 50 else 'chip-pct-low') %}
+    {% set bar_color = '#2e7d32' if u.pct >= 75 else ('#f57c00' if u.pct >= 50 else '#c62828') %}
+    <div class="unit-block">
+      <div class="unit-header" onclick="toggleUnit('unit_{{ loop.index }}')">
+        <strong><i class="fas fa-book"></i> {{ u.code }} — {{ u.name }}</strong>
+        <div class="unit-stats">
+          <span class="stat-chip chip-present"><i class="fas fa-check"></i> {{ u.present }} Present</span>
+          <span class="stat-chip chip-absent"><i class="fas fa-times"></i> {{ u.absent }} Absent</span>
+          <span class="stat-chip {{ pct_class }}">{{ u.pct }}%</span>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:{{ u.pct }}%;background:{{ bar_color }};"></div>
+          </div>
+          <i class="fas fa-chevron-down" style="color:#888;font-size:12px;"></i>
+        </div>
+      </div>
+      <div id="unit_{{ loop.index }}" style="display:none;">
+        <table>
+          <thead>
+            <tr><th>Week</th><th>Lesson</th><th>Year</th><th>Term</th><th>Status</th><th>Date</th></tr>
+          </thead>
+          <tbody>
+            {% for r in u.records %}
+            <tr>
+              <td>Week {{ r.week }}</td>
+              <td>{{ r.lesson }}</td>
+              <td>{{ r.year }}</td>
+              <td>Term {{ r.term }}</td>
+              <td><span class="badge badge-{{ r.status }}">{{ r.status.title() }}</span></td>
+              <td style="font-size:12px;color:#888;">
+                {{ r.attendance_date[:10] if r.attendance_date else '—' }}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+  <div class="card">
+    <div class="card-body" style="text-align:center;color:#aaa;padding:40px;">
+      <i class="fas fa-clipboard-list" style="font-size:40px;display:block;margin-bottom:14px;opacity:0.3;"></i>
+      No attendance records found for this trainee.
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+function toggleUnit(id) {
+  var el = document.getElementById(id);
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+</script>
+</body>
+</html>

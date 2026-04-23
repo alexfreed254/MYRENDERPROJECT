@@ -26,22 +26,17 @@
     thead th { background: #1a5fa8; color: #fff; padding: 8px 10px; font-size: 11px; text-align: left; border: 1px solid #1a5fa8; }
     tbody td { padding: 7px 10px; border: 1px solid #ccc; font-size: 11px; }
     tbody tr:nth-child(even) td { background: #f7f7f7; }
-    .badge-present { color: #1a7a1a; font-weight: 700; }
-    .badge-absent  { color: #c00; font-weight: 700; }
-
-    /* ── Unit section title ── */
-    .unit-title { background: #1a5fa8; color: #fff; padding: 7px 12px; font-size: 12px; font-weight: 700; margin-bottom: 0; border-radius: 3px 3px 0 0; }
-    .unit-summary { background: #e8f0fb; padding: 6px 12px; font-size: 11px; margin-bottom: 8px; display: flex; gap: 24px; border-radius: 0 0 3px 3px; }
-    .unit-summary span { font-weight: 600; }
-    .s-present { color: #1a7a1a; } .s-absent { color: #c00; }
-    .s-high { color: #1a7a1a; } .s-med { color: #e07000; } .s-low { color: #c00; }
+    .pct-high { color: #1a7a1a; font-weight: 700; }
+    .pct-med  { color: #e07000; font-weight: 700; }
+    .pct-low  { color: #c00;    font-weight: 700; }
+    td.center { text-align: center; }
 
     /* ── Signature block ── */
     .sig-section { margin-top: 40px; display: flex; justify-content: space-between; gap: 20px; }
     .sig-block { flex: 1; text-align: center; }
     .sig-line { border-top: 1.5px solid #333; margin-bottom: 8px; }
-    .sig-block .sig-role { font-weight: 700; font-size: 12px; text-transform: uppercase; margin-bottom: 4px; }
-    .sig-block .sig-name { font-size: 11px; color: #333; margin-bottom: 2px; }
+    .sig-block .sig-role  { font-weight: 700; font-size: 12px; text-transform: uppercase; margin-bottom: 4px; }
+    .sig-block .sig-name  { font-size: 11px; color: #333; margin-bottom: 2px; }
     .sig-block .sig-label { font-size: 11px; color: #555; }
 
     /* ── Footer ── */
@@ -65,61 +60,49 @@
 <!-- ── Info box ── -->
 <div class="info-box">
   <div class="info-col">
-    <p><strong>STUDENT:</strong> {{ student.full_name }}</p>
-    <p><strong>ADM NO:</strong> {{ student.admission_number }}</p>
-    <p><strong>CLASS:</strong> {{ student.classes.name if student.classes else '—' }}</p>
-    <p><strong>TRAINER:</strong> {{ trainer.name }}</p>
+    <p><strong>CLASS:</strong> {{ cls.name if cls else '—' }}</p>
+    <p><strong>YEAR:</strong> {{ year }}</p>
+    <p><strong>TERM:</strong> Term {{ term }} ({% if term==1 %}Jan–Apr{% elif term==2 %}May–Aug{% else %}Sep–Dec{% endif %})</p>
   </div>
   <div class="info-col">
-    <p><strong>DEPARTMENT:</strong> {{ dept.name if dept else '—' }}</p>
+    <p><strong>UNIT:</strong> {{ unit.code if unit else '—' }} — {{ unit.name if unit else '—' }}</p>
+    <p><strong>TRAINER:</strong> {{ trainer.name }}</p>
     <p><strong>DATE GENERATED:</strong> {{ generated }}</p>
-    <p><strong>TOTAL UNITS:</strong> {{ units_summary | length }}</p>
   </div>
 </div>
 
-<!-- ── Per-unit attendance tables ── -->
-{% for u in units_summary %}
-{% set pct_cls = 's-high' if u.pct >= 75 else ('s-med' if u.pct >= 50 else 's-low') %}
-<div style="margin-bottom: 24px; page-break-inside: avoid;">
-  <div class="unit-title">{{ u.code }} — {{ u.name }}</div>
-  <div class="unit-summary">
-    <span class="s-present">✓ Present: {{ u.present }}</span>
-    <span class="s-absent">✗ Absent: {{ u.absent }}</span>
-    <span>Total: {{ u.total }}</span>
-    <span class="{{ pct_cls }}">Attendance: {{ u.pct }}%</span>
-  </div>
-  <table>
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Week</th>
-        <th>Lesson</th>
-        <th>Year</th>
-        <th>Term</th>
-        <th>Status</th>
-        <th>Date</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for r in u.records %}
-      <tr>
-        <td>{{ loop.index }}</td>
-        <td>Week {{ r.week }}</td>
-        <td>{{ r.lesson }}</td>
-        <td>{{ r.year }}</td>
-        <td>Term {{ r.term }}</td>
-        <td class="badge-{{ r.status }}">
-          {{ '✓ Present' if r.status == 'present' else '✗ Absent' }}
-        </td>
-        <td>{{ r.attendance_date[:10] if r.attendance_date else '—' }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-{% else %}
-<p style="text-align:center;color:#aaa;padding:20px;">No attendance records found.</p>
-{% endfor %}
+<!-- ── Attendance table ── -->
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Adm No.</th>
+      <th>Student Name</th>
+      <th class="center">Present</th>
+      <th class="center">Absent</th>
+      <th class="center">Total</th>
+      <th class="center">Attendance %</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for s in summary %}
+    {% set pc = 'pct-high' if s.pct >= 75 else ('pct-med' if s.pct >= 50 else 'pct-low') %}
+    <tr>
+      <td>{{ loop.index }}</td>
+      <td>{{ s.admission_number }}</td>
+      <td><strong>{{ s.full_name }}</strong></td>
+      <td class="center" style="color:#1a7a1a;font-weight:700">{{ s.present }}</td>
+      <td class="center" style="color:#c00;font-weight:700">{{ s.absent }}</td>
+      <td class="center" style="color:#555">{{ s.total }}</td>
+      <td class="center {{ pc }}">{{ s.pct }}%</td>
+    </tr>
+    {% else %}
+    <tr>
+      <td colspan="7" style="text-align:center;color:#aaa;padding:20px;">No records found.</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
 
 <!-- ── Signature block ── -->
 <div class="sig-section">

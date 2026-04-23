@@ -11,14 +11,16 @@
     .topbar { background:linear-gradient(135deg,#1e5a9f,#2e75b6); color:#fff; padding:12px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
     .topbar a { color:#fff; text-decoration:none; padding:7px 14px; border-radius:6px; background:rgba(255,255,255,0.2); font-size:13px; font-weight:600; }
     .topbar a:hover { background:rgba(255,255,255,0.35); }
-    .page { max-width:900px; margin:24px auto; padding:0 16px; }
+    .page { max-width:960px; margin:24px auto; padding:0 16px; }
     .card { background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.06); margin-bottom:20px; overflow:hidden; }
-    .card-header { background:#1e5a9f; color:#fff; padding:13px 20px; font-size:14px; font-weight:600; }
+    .card-header { background:#1e5a9f; color:#fff; padding:13px 20px; font-size:14px; font-weight:600; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; }
     .card-body { padding:20px; }
     .search-row { display:flex; gap:10px; flex-wrap:wrap; }
     .search-row input { flex:1; min-width:200px; padding:10px 14px; border:1px solid #ddd; border-radius:8px; font-size:14px; }
-    .btn { padding:10px 20px; border:none; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600; }
+    .btn { padding:8px 16px; border:none; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:6px; }
     .btn-primary { background:#1e5a9f; color:#fff; }
+    .btn-success { background:#2e7d32; color:#fff; }
+    .btn-pdf     { background:#c62828; color:#fff; }
     .result-item { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border:1px solid #e3f2fd; border-radius:8px; margin-bottom:8px; background:#f8fbff; }
     .result-item strong { font-size:15px; color:#333; }
     .result-item span { font-size:13px; color:#666; margin-left:10px; }
@@ -30,9 +32,12 @@
     .badge-absent  { background:#ffebee; color:#c62828; }
     .stat-row { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
     .stat-pill { padding:10px 16px; border-radius:8px; font-weight:700; font-size:14px; }
-    .progress-wrap { display:flex; align-items:center; gap:10px; flex:1; min-width:160px; }
-    .progress-bar { height:10px; background:#eee; border-radius:5px; overflow:hidden; flex:1; }
+    .progress-bar { height:10px; background:#eee; border-radius:5px; overflow:hidden; flex:1; min-width:80px; }
     .progress-fill { height:100%; border-radius:5px; }
+    .unit-section { border:1px solid #e3f2fd; border-radius:10px; margin-bottom:16px; overflow:hidden; }
+    .unit-section-header { background:#e3f2fd; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+    .unit-section-header strong { color:#1e5a9f; font-size:14px; }
+    .pct-high { color:#2e7d32; } .pct-med { color:#f57c00; } .pct-low { color:#c62828; }
   </style>
 </head>
 <body>
@@ -57,7 +62,9 @@
           <input type="text" name="q" value="{{ query }}" placeholder="e.g. John Doe or ADM001" autofocus>
           <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
           {% if query %}
-          <a href="/lecturer/trainee-search" class="btn" style="background:#888;color:#fff;">Clear</a>
+          <a href="/lecturer/trainee-search" class="btn" style="background:#888;color:#fff;">
+            <i class="fas fa-times"></i> Clear
+          </a>
           {% endif %}
         </div>
       </form>
@@ -68,19 +75,29 @@
   {% if query %}
     {% if results %}
     <div class="card">
-      <div class="card-header"><i class="fas fa-users"></i> {{ results|length }} result(s) found</div>
+      <div class="card-header">
+        <span><i class="fas fa-users"></i> {{ results|length }} result(s) found</span>
+      </div>
       <div class="card-body">
         {% for s in results %}
         <div class="result-item">
           <div>
             <strong>{{ s.full_name }}</strong>
             <span>{{ s.admission_number }}</span>
-            <span style="color:#1e5a9f;margin-left:8px;">{{ s.classes.name if s.classes else '' }}</span>
+            <span style="color:#1e5a9f;margin-left:8px;">
+              <i class="fas fa-door-open"></i> {{ s.classes.name if s.classes else '' }}
+            </span>
           </div>
-          <a href="/lecturer/trainee-search?q={{ query }}&student_id={{ s.id }}"
-             class="btn btn-primary" style="padding:6px 14px;font-size:12px;">
-            <i class="fas fa-eye"></i> View
-          </a>
+          <div style="display:flex;gap:8px;">
+            <a href="/lecturer/trainee-report?student_id={{ s.id }}&q={{ query }}"
+               class="btn btn-primary" style="padding:6px 14px;font-size:12px;">
+              <i class="fas fa-eye"></i> View Report
+            </a>
+            <a href="/lecturer/trainee-report-pdf?student_id={{ s.id }}"
+               class="btn btn-pdf" style="padding:6px 14px;font-size:12px;" target="_blank">
+              <i class="fas fa-file-pdf"></i> PDF
+            </a>
+          </div>
         </div>
         {% endfor %}
       </div>

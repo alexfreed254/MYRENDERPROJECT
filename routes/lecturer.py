@@ -394,3 +394,377 @@ def trainee_search():
 
     return render_template("lecturer/trainee_search.html",
                            trainer=trainer, results=results, query=query)
+
+
+# ── Class Attendance Report ───────────────────────────────────────────────────
+
+@lecturer_bp.route("/class-report")
+@trainer_required
+def class_report():
+    """Full attendance report for a class/unit — view + PDF download link."""
+    db      = get_service_client()
+    trainer = _trainer_row()
+
+    class_id = request.args.get("class_id", type=int)
+    unit_id  = request.args.get("unit_id",  type=int)
+    year     = request.args.get("year",  2026, type=int)
+    term     = request.args.get("term",     1, type=int)
+
+    # Trainer's classes and units for the filter dropdowns
+    cu_rows = (db.table("class_units")
+                 .select("class_id")
+                 .eq("trainer_id", trainer["id"])
+                 .execute().data or [])
+    class_ids = list({r["class_id"] for r in cu_rows})
+
+    class_list = []
+    if class_ids:
+        class_list = (db.table("classes")
+                        .select("*")
+                        .in_("id", class_ids)
+                        .order("name")
+                        .execute().data or [])
+
+    units_list = []
+    records    = []
+    cls        = None
+    unit       = None
+    summary    = []   # per-student summary rows
+
+    if class_id and unit_id:
+        # Verify trainer owns this class/unit
+        cu = (db.table("class_units")
+                .select("id")
+                .eq("class_id", class_id)
+                .eq("unit_id",  unit_id)
+                .eq("trainer_id", trainer["id"])
+                .execute().data)
+        if not cu:
+            abort(403)
+
+        cls  = next((c for c in class_list if c["id"] == class_id), None)
+        unit = (db.table("units").select("*").eq("id", unit_id)
+                  .limit(1).execute().data or [{}])[0]
+
+        # All attendance records for this class/unit/year/term
+        records = (db.table("attendance")
+                     .select("*, students(id, full_name, admission_number)")
+                     .eq("unit_id",    unit_id)
+                     .eq("trainer_id", trainer["id"])
+                     .eq("year",       year)
+                     .eq("term",       term)
+                     .execute().data or [])
+
+        # Build per-student summary
+        student_map = {}
+        for r in records:
+            sid = r["student_id"]
+            if sid not in student_map:
+                student_map[sid] = {
+                    "id":               sid,
+                    "full_name":        (r.get("students") or {}).get("full_name", "—"),
+                    "admission_number": (r.get("students") or {}).get("admission_number", "—"),
+                    "present": 0, "absent": 0, "total": 0,
+                }
+            student_map[sid]["total"] += 1
+            if r["status"] == "present":
+                student_map[sid]["present"] += 1
+            else:
+                student_map[sid]["absent"] += 1
+
+        for s in student_map.values():
+            s["pct"] = round((s["present"] / s["total"]) * 100, 1) if s["total"] else 0
+
+        summary = sorted(student_map.values(), key=lambda x: x["admission_number"])
+
+    if class_id:
+        units_list = (db.table("class_units")
+                        .select("*, units(id, code, name)")
+                        .eq("class_id",   class_id)
+                        .eq("trainer_id", trainer["id"])
+                        .execute().data or [])
+
+    return render_template("lecturer/class_report.html",
+                           trainer=trainer,
+                           class_list=class_list,
+                           units_list=units_list,
+                           class_id=class_id,
+                           unit_id=unit_id,
+                           year=year, term=term,
+                           cls=cls, unit=unit,
+                           records=records,
+                           summary=summary)
+
+
+# ── Class Attendance PDF ──────────────────────────────────────────────────────
+
+@lecturer_bp.route("/class-report-pdf")
+@trainer_required
+def class_report_pdf():
+    db      = get_service_client()
+    trainer = _trainer_row()
+
+    class_id = request.args.get("class_id", type=int)
+    unit_id  = request.args.get("unit_id",  type=int)
+    year     = request.args.get("year",  2026, type=int)
+    term     = request.args.get("term",     1, type=int)
+
+    if not class_id or not unit_id:
+        abort(400)
+
+    # Verify ownership
+    cu = (db.table("class_units")
+            .select("id")
+            .eq("class_id",   class_id)
+            .eq("unit_id",    unit_id)
+            .eq("trainer_id", trainer["id"])
+            .execute().data)
+    if not cu:
+        abort(403)
+
+    cls  = (db.table("classes").select("*").eq("id", class_id)
+              .limit(1).execute().data or [{}])[0]
+    unit = (db.table("units").select("*").eq("id", unit_id)
+              .limit(1).execute().data or [{}])[0]
+    dept = (db.table("departments").select("name")
+              .eq("id", trainer.get("department_id", 0))
+              .limit(1).execute().data or [{}])[0]
+
+    records = (db.table("attendance")
+                 .select("*, students(id, full_name, admission_number)")
+                 .eq("unit_id",    unit_id)
+                 .eq("trainer_id", trainer["id"])
+                 .eq("year",       year)
+                 .eq("term",       term)
+                 .execute().data or [])
+
+    # Per-student summary
+    student_map = {}
+    for r in records:
+        sid = r["student_id"]
+        if sid not in student_map:
+            student_map[sid] = {
+                "full_name":        (r.get("students") or {}).get("full_name", "—"),
+                "admission_number": (r.get("students") or {}).get("admission_number", "—"),
+                "present": 0, "absent": 0, "total": 0,
+            }
+        student_map[sid]["total"] += 1
+        if r["status"] == "present":
+            student_map[sid]["present"] += 1
+        else:
+            student_map[sid]["absent"] += 1
+
+    for s in student_map.values():
+        s["pct"] = round((s["present"] / s["total"]) * 100, 1) if s["total"] else 0
+
+    summary = sorted(student_map.values(), key=lambda x: x["admission_number"])
+
+    from utils import now_eat
+    return render_template("lecturer/class_report_pdf.html",
+                           trainer=trainer,
+                           cls=cls, unit=unit, dept=dept,
+                           summary=summary,
+                           year=year, term=term,
+                           generated=now_eat().strftime("%d %b %Y %H:%M"))
+
+
+# ── Individual Trainee Report ─────────────────────────────────────────────────
+
+@lecturer_bp.route("/trainee-report")
+@trainer_required
+def trainee_report():
+    db         = get_service_client()
+    trainer    = _trainer_row()
+    student_id = request.args.get("student_id", type=int)
+    query      = request.args.get("q", "").strip()
+
+    if not student_id:
+        return redirect(url_for("lecturer.trainee_search"))
+
+    # Verify student is in one of trainer's classes
+    cu_rows = (db.table("class_units")
+                 .select("class_id")
+                 .eq("trainer_id", trainer["id"])
+                 .execute().data or [])
+    class_ids = list({r["class_id"] for r in cu_rows})
+
+    student = None
+    if class_ids:
+        rows = (db.table("students")
+                  .select("*, classes(name)")
+                  .eq("id", student_id)
+                  .in_("class_id", class_ids)
+                  .limit(1)
+                  .execute().data or [])
+        student = rows[0] if rows else None
+
+    if not student:
+        abort(403)
+
+    # All attendance for this student under this trainer
+    records = (db.table("attendance")
+                 .select("*, units(code, name)")
+                 .eq("student_id", student_id)
+                 .eq("trainer_id", trainer["id"])
+                 .order("year").order("term").order("week").order("lesson")
+                 .execute().data or [])
+
+    # Group by unit
+    unit_map = {}
+    for r in records:
+        uid = r["unit_id"]
+        if uid not in unit_map:
+            unit_map[uid] = {
+                "code":    (r.get("units") or {}).get("code", "—"),
+                "name":    (r.get("units") or {}).get("name", "—"),
+                "present": 0, "absent": 0, "total": 0,
+                "records": [],
+            }
+        unit_map[uid]["total"] += 1
+        if r["status"] == "present":
+            unit_map[uid]["present"] += 1
+        else:
+            unit_map[uid]["absent"] += 1
+        unit_map[uid]["records"].append(r)
+
+    for u in unit_map.values():
+        u["pct"] = round((u["present"] / u["total"]) * 100, 1) if u["total"] else 0
+
+    units_summary = list(unit_map.values())
+
+    return render_template("lecturer/trainee_report.html",
+                           trainer=trainer,
+                           student=student,
+                           units_summary=units_summary,
+                           query=query,
+                           student_id=student_id)
+
+
+# ── Individual Trainee PDF ────────────────────────────────────────────────────
+
+@lecturer_bp.route("/trainee-report-pdf")
+@trainer_required
+def trainee_report_pdf():
+    db         = get_service_client()
+    trainer    = _trainer_row()
+    student_id = request.args.get("student_id", type=int)
+
+    if not student_id:
+        abort(400)
+
+    cu_rows = (db.table("class_units")
+                 .select("class_id")
+                 .eq("trainer_id", trainer["id"])
+                 .execute().data or [])
+    class_ids = list({r["class_id"] for r in cu_rows})
+
+    student = None
+    if class_ids:
+        rows = (db.table("students")
+                  .select("*, classes(name)")
+                  .eq("id", student_id)
+                  .in_("class_id", class_ids)
+                  .limit(1)
+                  .execute().data or [])
+        student = rows[0] if rows else None
+
+    if not student:
+        abort(403)
+
+    records = (db.table("attendance")
+                 .select("*, units(code, name)")
+                 .eq("student_id", student_id)
+                 .eq("trainer_id", trainer["id"])
+                 .order("year").order("term").order("week").order("lesson")
+                 .execute().data or [])
+
+    unit_map = {}
+    for r in records:
+        uid = r["unit_id"]
+        if uid not in unit_map:
+            unit_map[uid] = {
+                "code":    (r.get("units") or {}).get("code", "—"),
+                "name":    (r.get("units") or {}).get("name", "—"),
+                "present": 0, "absent": 0, "total": 0,
+                "records": [],
+            }
+        unit_map[uid]["total"] += 1
+        if r["status"] == "present":
+            unit_map[uid]["present"] += 1
+        else:
+            unit_map[uid]["absent"] += 1
+        unit_map[uid]["records"].append(r)
+
+    for u in unit_map.values():
+        u["pct"] = round((u["present"] / u["total"]) * 100, 1) if u["total"] else 0
+
+    units_summary = list(unit_map.values())
+    dept = (db.table("departments").select("name")
+              .eq("id", trainer.get("department_id", 0))
+              .limit(1).execute().data or [{}])[0]
+
+    from utils import now_eat
+    return render_template("lecturer/trainee_report_pdf.html",
+                           trainer=trainer,
+                           student=student,
+                           units_summary=units_summary,
+                           dept=dept,
+                           generated=now_eat().strftime("%d %b %Y %H:%M"))
+
+
+# ── Per-session Attendance PDF (Week/Lesson) ──────────────────────────────────
+
+@lecturer_bp.route("/download-attendance-pdf")
+@trainer_required
+def download_attendance_pdf():
+    db      = get_service_client()
+    trainer = _trainer_row()
+
+    class_id = request.args.get("class_id", type=int)
+    unit_id  = request.args.get("unit_id",  type=int)
+    week     = request.args.get("week",     type=int)
+    lesson   = request.args.get("lesson",   "")
+    year     = request.args.get("year",  2026, type=int)
+    term     = request.args.get("term",     1, type=int)
+
+    if not all([class_id, unit_id, week, lesson]):
+        abort(400)
+
+    # Verify ownership
+    cu = (db.table("class_units")
+            .select("id")
+            .eq("class_id",   class_id)
+            .eq("unit_id",    unit_id)
+            .eq("trainer_id", trainer["id"])
+            .execute().data)
+    if not cu:
+        abort(403)
+
+    cls  = (db.table("classes").select("*").eq("id", class_id)
+              .limit(1).execute().data or [{}])[0]
+    unit = (db.table("units").select("*").eq("id", unit_id)
+              .limit(1).execute().data or [{}])[0]
+    dept = (db.table("departments").select("name")
+              .eq("id", trainer.get("department_id", 0))
+              .limit(1).execute().data or [{}])[0]
+
+    records = (db.table("attendance")
+                 .select("*, students(full_name, admission_number)")
+                 .eq("unit_id",    unit_id)
+                 .eq("trainer_id", trainer["id"])
+                 .eq("week",       week)
+                 .eq("lesson",     lesson)
+                 .eq("year",       year)
+                 .eq("term",       term)
+                 .execute().data or [])
+
+    from utils import now_eat
+    now = now_eat()
+    return render_template("lecturer/download_attendance_pdf.html",
+                           trainer=trainer,
+                           cls=cls, unit=unit, dept=dept,
+                           records=records,
+                           week=week, lesson=lesson,
+                           year=year, term=term,
+                           date=now.strftime("%d %b %Y"),
+                           generated=now.strftime("%d %b %Y, %H:%M"))

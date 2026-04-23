@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Class Attendance Report | TTTTI</title>
+  <link rel="stylesheet" href="/static/css/base.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { background:#f4f4f4; font-family:'Segoe UI',sans-serif; }
+    .topbar { background:linear-gradient(135deg,#1e5a9f,#2e75b6); color:#fff; padding:12px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+    .topbar a { color:#fff; text-decoration:none; padding:7px 14px; border-radius:6px; background:rgba(255,255,255,0.2); font-size:13px; font-weight:600; }
+    .page { max-width:1000px; margin:24px auto; padding:0 16px; }
+    .card { background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.06); margin-bottom:20px; overflow:hidden; }
+    .card-header { background:#1e5a9f; color:#fff; padding:13px 20px; font-size:14px; font-weight:600; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+    .card-body { padding:20px; }
+    .filter-row { display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; }
+    .fg label { display:block; font-size:12px; font-weight:600; color:#555; margin-bottom:4px; }
+    .fg select { padding:9px 12px; border:1px solid #ddd; border-radius:6px; font-size:13px; min-width:160px; }
+    .btn { padding:9px 18px; border:none; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:6px; }
+    .btn-primary { background:#1e5a9f; color:#fff; }
+    .btn-pdf     { background:#c62828; color:#fff; }
+    table { width:100%; border-collapse:collapse; }
+    th { background:#f5f5f5; padding:10px 14px; text-align:left; font-size:12px; color:#555; border-bottom:2px solid #eee; }
+    td { padding:10px 14px; border-bottom:1px solid #f0f0f0; font-size:13px; }
+    .progress-bar { height:8px; background:#eee; border-radius:4px; overflow:hidden; width:80px; display:inline-block; vertical-align:middle; }
+    .progress-fill { height:100%; border-radius:4px; }
+    .pct-high { color:#2e7d32; font-weight:700; }
+    .pct-med  { color:#f57c00; font-weight:700; }
+    .pct-low  { color:#c62828; font-weight:700; }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="/lecturer/dashboard"><i class="fas fa-arrow-left"></i> Dashboard</a>
+  <span><i class="fas fa-user"></i> {{ trainer.name }}</span>
+  {% if class_id and unit_id %}
+  <a href="/lecturer/class-report-pdf?class_id={{ class_id }}&unit_id={{ unit_id }}&year={{ year }}&term={{ term }}"
+     target="_blank" class="btn btn-pdf">
+    <i class="fas fa-file-pdf"></i> Download PDF
+  </a>
+  {% endif %}
+</div>
+
+<div class="page">
+  <h2 style="color:#1e5a9f;margin-bottom:20px;font-size:20px;">
+    <i class="fas fa-clipboard-list"></i> Class Attendance Report
+  </h2>
+
+  <!-- Filters -->
+  <div class="card">
+    <div class="card-header"><i class="fas fa-filter"></i> Select Class &amp; Unit</div>
+    <div class="card-body">
+      <form method="get" action="/lecturer/class-report">
+        <div class="filter-row">
+          <div class="fg">
+            <label>Class</label>
+            <select name="class_id" onchange="this.form.submit()">
+              <option value="">-- Select Class --</option>
+              {% for c in class_list %}
+              <option value="{{ c.id }}" {% if class_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          {% if units_list %}
+          <div class="fg">
+            <label>Unit</label>
+            <select name="unit_id">
+              <option value="">-- Select Unit --</option>
+              {% for u in units_list %}
+              <option value="{{ u.units.id }}" {% if unit_id == u.units.id %}selected{% endif %}>
+                {{ u.units.code }} — {{ u.units.name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          {% endif %}
+          <div class="fg">
+            <label>Year</label>
+            <select name="year">
+              {% for y in range(2024,2030) %}
+              <option value="{{ y }}" {% if year == y %}selected{% endif %}>{{ y }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="fg">
+            <label>Term</label>
+            <select name="term">
+              <option value="1" {% if term==1 %}selected{% endif %}>Term 1</option>
+              <option value="2" {% if term==2 %}selected{% endif %}>Term 2</option>
+              <option value="3" {% if term==3 %}selected{% endif %}>Term 3</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary" style="margin-top:20px;">
+            <i class="fas fa-eye"></i> View
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Summary table -->
+  {% if summary %}
+  <div class="card">
+    <div class="card-header">
+      <span>
+        <i class="fas fa-users"></i>
+        {{ cls.name if cls else '' }} — {{ unit.code if unit else '' }} {{ unit.name if unit else '' }}
+        &nbsp;|&nbsp; {{ summary|length }} students
+      </span>
+      <a href="/lecturer/class-report-pdf?class_id={{ class_id }}&unit_id={{ unit_id }}&year={{ year }}&term={{ term }}"
+         target="_blank" class="btn btn-pdf" style="padding:6px 14px;font-size:12px;">
+        <i class="fas fa-file-pdf"></i> Download PDF
+      </a>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Adm No.</th>
+            <th>Student Name</th>
+            <th style="text-align:center">Present</th>
+            <th style="text-align:center">Absent</th>
+            <th style="text-align:center">Total</th>
+            <th>Attendance %</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in summary %}
+          {% set pc = 'pct-high' if s.pct >= 75 else ('pct-med' if s.pct >= 50 else 'pct-low') %}
+          {% set bc = '#2e7d32' if s.pct >= 75 else ('#f57c00' if s.pct >= 50 else '#c62828') %}
+          <tr>
+            <td style="color:#aaa">{{ loop.index }}</td>
+            <td>{{ s.admission_number }}</td>
+            <td><strong>{{ s.full_name }}</strong></td>
+            <td style="text-align:center;color:#2e7d32;font-weight:700">{{ s.present }}</td>
+            <td style="text-align:center;color:#c62828;font-weight:700">{{ s.absent }}</td>
+            <td style="text-align:center;color:#888">{{ s.total }}</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="progress-bar">
+                  <div class="progress-fill" style="width:{{ s.pct }}%;background:{{ bc }};"></div>
+                </div>
+                <span class="{{ pc }}">{{ s.pct }}%</span>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% elif class_id and unit_id %}
+  <div class="card">
+    <div class="card-body" style="text-align:center;color:#aaa;padding:40px;">
+      <i class="fas fa-clipboard-list" style="font-size:40px;display:block;margin-bottom:14px;opacity:0.3;"></i>
+      No attendance records found for this selection.
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+</body>
+</html>
