@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Select Department | TTTTI</title>
+  <link rel="stylesheet" href="/static/css/base.css">
+</head>
+<body>
+<div class="auth-page">
+  <div class="auth-box">
+    <div class="logo"><img src="{{ LOGO_URL }}" alt="Logo"></div>
+    <h1>Select Department</h1>
+    <h2>Choose your department to continue</h2>
+    <form method="post">
+      <div class="form-group">
+        <label>Department</label>
+        <select name="department_id" class="form-control" required>
+          <option value="">-- Choose Department --</option>
+          {% for d in depts %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;">Proceed to Dashboard</button>
+    </form>
+    <div class="auth-footer"><a href="/lecturer/logout">Logout</a></div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,147 @@
+{% extends 'admin/base.html' %}
+{% block title %}Trainee Attendance Search{% endblock %}
+
+{% block content %}
+<h1 class="page-title"><i class="fas fa-search"></i> Trainee Attendance Search</h1>
+
+<!-- Step 1: Search -->
+<div class="section-card">
+  <h3><i class="fas fa-user-graduate"></i> Step 1 — Search by Admission Number or Name</h3>
+  <form method="get" action="/admin/trainee_search" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+    {% if unit_id %}<input type="hidden" name="unit_id" value="{{ unit_id }}">{% endif %}
+    <div class="form-group" style="margin:0;flex:1;min-width:240px;">
+      <label>Admission Number or Name</label>
+      <input type="text" name="q" class="form-control" value="{{ query }}" placeholder="e.g. E001 or John" autofocus>
+    </div>
+    <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
+    {% if query %}
+      <a href="/admin/trainee_search" class="btn" style="background:#666;color:#fff;"><i class="fas fa-times"></i> Clear</a>
+    {% endif %}
+  </form>
+
+  {% if query and not students %}
+    <p style="margin-top:14px;color:#888;">No trainees found matching "<strong>{{ query }}</strong>".</p>
+  {% endif %}
+
+  {% if students %}
+  <div style="margin-top:18px;">
+    <p style="font-size:13px;color:#666;margin-bottom:10px;">{{ students|length }} result(s) — click a trainee to view their attendance:</p>
+    {% for s in students %}
+    <a href="/admin/trainee_search?q={{ query }}&student_id={{ s.id }}&unit_id={{ unit_id }}" style="text-decoration:none;">
+      <div style="background:#e3f2fd;border-radius:8px;padding:12px 18px;margin-bottom:8px;
+                  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;
+                  border:2px solid {% if student_id == s.id %}#1e5a9f{% else %}transparent{% endif %};
+                  cursor:pointer;transition:border-color 0.15s;">
+        <div>
+          <strong style="font-size:15px;">{{ s.full_name }}</strong>
+          <span style="margin-left:12px;color:#555;font-size:13px;">{{ s.admission_number }}</span>
+          <span style="margin-left:12px;color:#888;font-size:12px;">{{ s.class_name }} &mdash; {{ s.dept_name }}</span>
+        </div>
+        <i class="fas fa-chevron-right" style="color:#1e5a9f;"></i>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+<!-- Step 2: Select Unit -->
+{% if student_id %}
+<div class="section-card">
+  <h3><i class="fas fa-book"></i> Step 2 — Select Unit</h3>
+  <form method="get" action="/admin/trainee_search" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+    <input type="hidden" name="q" value="{{ query }}">
+    <input type="hidden" name="student_id" value="{{ student_id }}">
+    <div class="form-group" style="margin:0;flex:1;min-width:240px;">
+      <label>Unit</label>
+      <select name="unit_id" class="form-control" required>
+        <option value="">-- Select Unit --</option>
+        {% for u in units_list %}
+          <option value="{{ u.id }}" {% if unit_id == u.id %}selected{% endif %}>{{ u.code }} — {{ u.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary"><i class="fas fa-eye"></i> View</button>
+  </form>
+</div>
+{% endif %}
+
+<!-- Step 3: Results -->
+{% if student and summary %}
+<div class="section-card">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #eee;">
+    <h3 style="margin:0;border:none;padding:0;">
+      <i class="fas fa-clipboard-list"></i>
+      {{ student.full_name }} &mdash; {{ summary.unit.code }} {{ summary.unit.name }}
+    </h3>
+    <a href="/admin/trainee_report_pdf?student_id={{ student_id }}&unit_id={{ unit_id }}"
+       class="btn btn-success btn-sm" target="_blank">
+      <i class="fas fa-file-pdf"></i> Download PDF Report
+    </a>
+  </div>
+
+  <!-- Student info -->
+  <div style="background:#f5f8ff;border-radius:8px;padding:12px 16px;margin-bottom:18px;font-size:13px;display:flex;gap:24px;flex-wrap:wrap;">
+    <div><strong>Adm No:</strong> {{ student.admission_number }}</div>
+    <div><strong>Class:</strong> {{ student.class_name }}</div>
+    <div><strong>Department:</strong> {{ student.dept_name }}</div>
+  </div>
+
+  <!-- Summary stats -->
+  <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:18px;">
+    <div style="flex:1;min-width:90px;text-align:center;padding:14px;border-radius:8px;background:#e8f5e9;color:#2e7d32;">
+      <div style="font-size:28px;font-weight:800;line-height:1;">{{ summary.present }}</div>
+      <div style="font-size:12px;font-weight:600;margin-top:4px;">Present</div>
+    </div>
+    <div style="flex:1;min-width:90px;text-align:center;padding:14px;border-radius:8px;background:#ffebee;color:#c62828;">
+      <div style="font-size:28px;font-weight:800;line-height:1;">{{ summary.absent }}</div>
+      <div style="font-size:12px;font-weight:600;margin-top:4px;">Absent</div>
+    </div>
+    <div style="flex:1;min-width:90px;text-align:center;padding:14px;border-radius:8px;background:#e3f2fd;color:#1e5a9f;">
+      <div style="font-size:28px;font-weight:800;line-height:1;">{{ summary.total }}</div>
+      <div style="font-size:12px;font-weight:600;margin-top:4px;">Total</div>
+    </div>
+    <div style="flex:1;min-width:90px;text-align:center;padding:14px;border-radius:8px;background:#fff3e0;color:#e65100;">
+      <div style="font-size:28px;font-weight:800;line-height:1;">{{ summary.pct }}%</div>
+      <div style="font-size:12px;font-weight:600;margin-top:4px;">Attendance</div>
+    </div>
+    <div style="flex:3;min-width:160px;display:flex;align-items:center;gap:10px;">
+      <div style="flex:1;height:12px;background:#eee;border-radius:6px;overflow:hidden;">
+        <div style="height:100%;border-radius:6px;width:{{ summary.pct }}%;
+          background:{% if summary.pct >= 75 %}#27ae60{% elif summary.pct >= 50 %}#f39c12{% else %}#e74c3c{% endif %};"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Records table -->
+  {% if records %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>#</th><th>Week</th><th>Lesson</th><th>Status</th><th>Trainer</th><th>Date</th></tr>
+      </thead>
+      <tbody>
+        {% for r in records %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>Week {{ r.week }}</td>
+          <td>{{ r.lesson }}</td>
+          <td style="font-weight:700;color:{% if r.status == 'Present' %}#28a745{% else %}#dc3545{% endif %};">
+            {% if r.status == 'Present' %}✓ Present{% else %}✗ Absent{% endif %}
+          </td>
+          <td style="font-size:13px;">{{ r.trainer_name or '—' }}</td>
+          <td style="font-size:12px;color:#888;">
+            {% if r.attendance_date %}{{ r.attendance_date.strftime('%d %b %Y, %H:%M') }}{% else %}—{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p style="text-align:center;color:#888;padding:24px;">No attendance records found for this trainee in this unit.</p>
+  {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Super Admin{% endblock %} | TTTTI</title>
+  <link rel="stylesheet" href="/static/css/base.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; background:#f4f4f4; }
+    .dashboard-container { display:flex; min-height:100vh; }
+    .sidebar { width:260px; min-width:260px; background:linear-gradient(180deg,#7b1fa2 0%,#4a148c 100%); color:#fff; display:flex; flex-direction:column; position:fixed; top:0; left:0; height:100vh; z-index:100; box-shadow:2px 0 5px rgba(0,0,0,.1); }
+    .sidebar-header { padding:20px; text-align:center; border-bottom:1px solid rgba(255,255,255,.1); }
+    .sidebar-header img { height:60px; margin-bottom:10px; border-radius:50%; border:2px solid #fff; }
+    .sidebar-header h2 { font-size:13px; font-weight:700; opacity:.9; }
+    .sidebar-header .role-badge { display:inline-block; background:rgba(255,255,255,.2); border-radius:20px; padding:3px 12px; font-size:11px; margin-top:6px; }
+    .sidebar-menu { flex:1; padding:20px 0; overflow-y:auto; }
+    .sidebar-menu a { display:block; padding:13px 25px; color:rgba(255,255,255,.8); text-decoration:none; transition:all .3s; border-left:4px solid transparent; font-size:14px; }
+    .sidebar-menu a:hover, .sidebar-menu a.active { background:rgba(255,255,255,.1); color:#fff; border-left-color:#ffd700; }
+    .sidebar-menu .menu-section { padding:10px 25px 4px; font-size:10px; text-transform:uppercase; letter-spacing:1px; color:rgba(255,255,255,.4); }
+    .sidebar-footer { padding:16px; border-top:1px solid rgba(255,255,255,.1); }
+    .sidebar-footer a { display:block; padding:10px; text-align:center; background:rgba(255,0,0,.2); color:#fff; text-decoration:none; border-radius:6px; font-size:13px; }
+    .sidebar-footer a:hover { background:rgba(255,0,0,.4); }
+    .main-content { margin-left:260px; flex:1; min-height:100vh; }
+    .topbar { background:#fff; padding:14px 24px; display:flex; align-items:center; justify-content:space-between; box-shadow:0 1px 4px rgba(0,0,0,.08); }
+    .topbar-title { font-size:16px; font-weight:600; color:#333; }
+    .topbar-user { font-size:13px; color:#666; }
+    {% block extra_style %}{% endblock %}
+  </style>
+</head>
+<body>
+<div class="dashboard-container">
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <img src="{{ LOGO_URL }}" alt="Logo">
+      <h2>THIKA TECHNICAL</h2>
+      <div class="role-badge"><i class="fas fa-shield-alt"></i> Super Admin</div>
+    </div>
+    <div class="sidebar-menu">
+      <div class="menu-section">Overview</div>
+      <a href="/super-admin/welcome"><i class="fas fa-tachometer-alt fa-fw"></i> Dashboard</a>
+
+      <div class="menu-section">User Management</div>
+      <a href="/super-admin/dept-admins"><i class="fas fa-user-tie fa-fw"></i> Dept Admins</a>
+      <a href="/super-admin/users"><i class="fas fa-users fa-fw"></i> All Users</a>
+      <a href="/super-admin/trainers"><i class="fas fa-chalkboard-teacher fa-fw"></i> Trainers</a>
+      <a href="/super-admin/students"><i class="fas fa-user-graduate fa-fw"></i> Students</a>
+
+      <div class="menu-section">Academic</div>
+      <a href="/super-admin/departments"><i class="fas fa-building fa-fw"></i> Departments</a>
+      <a href="/super-admin/classes"><i class="fas fa-door-open fa-fw"></i> Classes</a>
+      <a href="/super-admin/units"><i class="fas fa-book fa-fw"></i> Units</a>
+      <a href="/super-admin/assign-units"><i class="fas fa-link fa-fw"></i> Assign Units</a>
+
+      <div class="menu-section">Reports</div>
+      <a href="/super-admin/attendance"><i class="fas fa-clipboard-list fa-fw"></i> Attendance</a>
+      <a href="/super-admin/logs"><i class="fas fa-history fa-fw"></i> System Logs</a>
+    </div>
+    <div class="sidebar-footer">
+      <a href="/auth/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="topbar">
+      <span class="topbar-title">{% block page_title %}Dashboard{% endblock %}</span>
+      <span class="topbar-user"><i class="fas fa-user-shield"></i> {{ current_user.name if current_user else '' }}</span>
+    </div>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+        <div style="background:{% if cat=='success' %}#e8f5e9{% else %}#ffebee{% endif %};color:{% if cat=='success' %}#2e7d32{% else %}#c62828{% endif %};padding:12px 24px;font-size:13px;border-bottom:1px solid #eee;">
+          <i class="fas fa-{% if cat=='success' %}check-circle{% else %}exclamation-circle{% endif %}"></i> {{ msg }}
+        </div>
+      {% endfor %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </div>
+</div>
+{% block scripts %}{% endblock %}
+</body>
+</html>

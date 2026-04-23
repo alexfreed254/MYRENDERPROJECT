@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Trainee Attendance Search | TTTTI</title>
+  <link rel="stylesheet" href="/static/css/base.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .topbar { background:linear-gradient(135deg,#1e5a9f,#2e75b6); color:#fff; padding:12px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+    .topbar a { color:#fff; text-decoration:none; padding:7px 14px; border-radius:6px; background:rgba(255,255,255,0.2); font-size:13px; font-weight:600; }
+    .topbar a:hover { background:rgba(255,255,255,0.35); }
+    .page { max-width:900px; margin:24px auto; padding:0 16px; }
+    .search-box { display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; }
+    .student-card { background:#e3f2fd; border-radius:8px; padding:14px 18px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; cursor:pointer; border:2px solid transparent; transition:border-color 0.15s; }
+    .student-card:hover { border-color:#1e5a9f; }
+    .student-card.selected { border-color:#1e5a9f; background:#bbdefb; }
+    .stat-row { display:flex; gap:16px; flex-wrap:wrap; margin-bottom:20px; }
+    .stat-pill { padding:10px 18px; border-radius:8px; font-weight:700; font-size:15px; }
+    .status-present { color:#28a745; font-weight:700; }
+    .status-absent  { color:#dc3545; font-weight:700; }
+    .progress-bar { height:10px; background:#eee; border-radius:5px; overflow:hidden; flex:1; min-width:100px; }
+    .progress-fill { height:100%; border-radius:5px; }
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <a href="/lecturer/dashboard">← Dashboard</a>
+  <span>{{ trainer.name }}</span>
+  <a href="/lecturer/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+</div>
+
+<div class="page">
+  <h1 style="color:#1e5a9f;font-size:22px;margin-bottom:20px;"><i class="fas fa-search"></i> Trainee Attendance Search</h1>
+
+  <!-- Step 1: Search -->
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-header">Step 1 — Search Trainee by Name or Admission Number</div>
+    <div class="card-body">
+      <form method="get" action="/lecturer/trainee_search" class="search-box">
+        {% if unit_id %}<input type="hidden" name="unit_id" value="{{ unit_id }}">{% endif %}
+        <div class="form-group" style="margin:0;flex:1;min-width:220px;">
+          <label>Name or Admission Number</label>
+          <input type="text" name="q" class="form-control" value="{{ query }}" placeholder="e.g. John or E001" autofocus>
+        </div>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
+        {% if query %}<a href="/lecturer/trainee_search" class="btn" style="background:#666;color:#fff;">Clear</a>{% endif %}
+      </form>
+
+      {% if query and not students %}
+        <p style="margin-top:14px;color:#888;">No trainees found matching "<strong>{{ query }}</strong>".</p>
+      {% endif %}
+
+      {% if students %}
+      <div style="margin-top:16px;">
+        <p style="font-size:13px;color:#666;margin-bottom:10px;">{{ students|length }} result(s) — click a trainee to view their attendance:</p>
+        {% for s in students %}
+        <a href="/lecturer/trainee_search?q={{ query }}&student_id={{ s.id }}&unit_id={{ unit_id }}" style="text-decoration:none;">
+          <div class="student-card {% if student_id == s.id %}selected{% endif %}">
+            <div>
+              <strong style="font-size:15px;">{{ s.full_name }}</strong>
+              <span style="margin-left:12px;color:#555;font-size:13px;">{{ s.admission_number }}</span>
+            </div>
+            <span style="color:#1e5a9f;font-size:13px;"><i class="fas fa-chevron-right"></i></span>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Step 2: Select Unit -->
+  {% if student_id %}
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-header">Step 2 — Select Unit</div>
+    <div class="card-body">
+      <form method="get" action="/lecturer/trainee_search" class="search-box">
+        <input type="hidden" name="q" value="{{ query }}">
+        <input type="hidden" name="student_id" value="{{ student_id }}">
+        <div class="form-group" style="margin:0;flex:1;min-width:220px;">
+          <label>Unit</label>
+          <select name="unit_id" class="form-control" required>
+            <option value="">-- Select Unit --</option>
+            {% for u in units_list %}
+              <option value="{{ u.id }}" {% if unit_id == u.id %}selected{% endif %}>{{ u.code }} — {{ u.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-eye"></i> View</button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Step 3: Results -->
+  {% if student and summary %}
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+      <span><i class="fas fa-clipboard-list"></i> {{ student.full_name }} — {{ summary.unit.code }} {{ summary.unit.name }}</span>
+      <a href="/lecturer/trainee_report_pdf?student_id={{ student_id }}&unit_id={{ unit_id }}"
+         class="btn btn-success btn-sm" target="_blank">
+        <i class="fas fa-file-pdf"></i> Download PDF Report
+      </a>
+    </div>
+    <div class="card-body">
+      <!-- Summary stats -->
+      <div class="stat-row">
+        <div class="stat-pill" style="background:#e8f5e9;color:#2e7d32;">
+          <i class="fas fa-check-circle"></i> Present: {{ summary.present }}
+        </div>
+        <div class="stat-pill" style="background:#ffebee;color:#c62828;">
+          <i class="fas fa-times-circle"></i> Absent: {{ summary.absent }}
+        </div>
+        <div class="stat-pill" style="background:#e3f2fd;color:#1e5a9f;">
+          <i class="fas fa-list"></i> Total: {{ summary.total }}
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:160px;">
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:{{ summary.pct }}%;background:{% if summary.pct >= 75 %}#27ae60{% elif summary.pct >= 50 %}#f39c12{% else %}#e74c3c{% endif %};"></div>
+          </div>
+          <strong style="font-size:16px;color:{% if summary.pct >= 75 %}#27ae60{% elif summary.pct >= 50 %}#f39c12{% else %}#e74c3c{% endif %};">{{ summary.pct }}%</strong>
+        </div>
+      </div>
+
+      <!-- Records table -->
+      {% if records %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Week</th><th>Lesson</th><th>Status</th><th>Date</th></tr>
+          </thead>
+          <tbody>
+            {% for r in records %}
+            <tr>
+              <td>Week {{ r.week }}</td>
+              <td>{{ r.lesson }}</td>
+              <td class="status-{{ r.status | lower }}">
+                {% if r.status == 'Present' %}✓ Present{% else %}✗ Absent{% endif %}
+              </td>
+              <td style="font-size:12px;color:#888;">
+                {% if r.attendance_date %}{{ r.attendance_date.strftime('%d %b %Y, %H:%M') }}{% else %}-{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p style="color:#888;text-align:center;padding:20px;">No attendance records found for this trainee in this unit.</p>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+</body>
+</html>

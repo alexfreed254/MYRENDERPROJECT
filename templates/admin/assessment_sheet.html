@@ -1,0 +1,157 @@
+{% extends 'admin/base.html' %}
+{% block title %}Assessment Attendance Sheet{% endblock %}
+{% block content %}
+<h1 class="page-title"><i class="fas fa-file-certificate"></i> Assessment Attendance Sheet</h1>
+
+<!-- Filter -->
+<div class="section-card">
+  <h3><i class="fas fa-filter"></i> Filter — Select Class, Unit &amp; Term</h3>
+  <form method="get" action="/admin/assessment_sheet">
+    <div class="filter-grid" style="margin-bottom:16px;">
+
+      <div class="form-group" style="margin:0;">
+        <label>Department</label>
+        <select name="dept_id" class="form-control" onchange="this.form.submit()">
+          <option value="">All Departments</option>
+          {% for d in departments %}
+            <option value="{{ d.id }}" {% if dept_id == d.id %}selected{% endif %}>{{ d.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group" style="margin:0;">
+        <label>Class <span style="color:#e53935;">*</span></label>
+        <select name="class_id" class="form-control" required>
+          <option value="">-- Select Class --</option>
+          {% for c in classes %}
+            <option value="{{ c.id }}" {% if class_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group" style="margin:0;">
+        <label>Unit <span style="color:#e53935;">*</span></label>
+        <select name="unit_id" class="form-control" required>
+          <option value="">-- Select Unit --</option>
+          {% for u in units %}
+            <option value="{{ u.id }}" {% if unit_id == u.id %}selected{% endif %}>{{ u.code }} — {{ u.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group" style="margin:0;">
+        <label>Year</label>
+        <select name="year" class="form-control">
+          <option value="">All Years</option>
+          {% for y in range(2026, 2036) %}
+            <option value="{{ y }}" {% if year == y %}selected{% endif %}>{{ y }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group" style="margin:0;">
+        <label>Term</label>
+        <select name="term" class="form-control">
+          <option value="">All Terms</option>
+          <option value="1" {% if term == 1 %}selected{% endif %}>Term 1 (Jan–Apr)</option>
+          <option value="2" {% if term == 2 %}selected{% endif %}>Term 2 (May–Aug)</option>
+          <option value="3" {% if term == 3 %}selected{% endif %}>Term 3 (Sep–Dec)</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin:0;">
+        <label>Min. Attendance %</label>
+        <select name="min_pct" class="form-control">
+          {% for p in [70, 75, 80, 85, 90] %}
+            <option value="{{ p }}" {% if min_pct == p %}selected{% endif %}>{{ p }}%</option>
+          {% endfor %}
+        </select>
+      </div>
+
+    </div>
+    <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Generate List</button>
+  </form>
+</div>
+
+<!-- Results preview -->
+{% if class_id and unit_id %}
+<div class="section-card">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #eee;">
+    <h3 style="margin:0;border:none;padding:0;">
+      <i class="fas fa-clipboard-check"></i>
+      Eligible Trainees — {{ unit.code }} {{ unit.name }}
+      {% if cls %}&mdash; {{ cls.name }}{% endif %}
+    </h3>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <span style="background:#e8f5e9;color:#2e7d32;padding:5px 14px;border-radius:20px;font-size:13px;font-weight:700;">
+        <i class="fas fa-check-circle"></i> {{ eligible|length }} eligible
+      </span>
+      {% if eligible %}
+      <a href="/admin/assessment_sheet_pdf?class_id={{ class_id }}&unit_id={{ unit_id }}&year={{ year }}&term={{ term }}&min_pct={{ min_pct }}"
+         class="btn btn-success" target="_blank">
+        <i class="fas fa-file-pdf"></i> Download Assessment Sheet
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Info bar -->
+  <div style="background:#f5f8ff;border-radius:8px;padding:10px 16px;margin-bottom:16px;font-size:13px;display:flex;gap:20px;flex-wrap:wrap;">
+    {% if cls %}<span><strong>Class:</strong> {{ cls.name }}</span>{% endif %}
+    {% if cls %}<span><strong>Dept:</strong> {{ cls.dept_name }}</span>{% endif %}
+    <span><strong>Term:</strong> {{ term_label }}</span>
+    {% if year %}<span><strong>Year:</strong> {{ year }}</span>{% endif %}
+    <span><strong>Min. Attendance:</strong> {{ min_pct }}%</span>
+  </div>
+
+  {% if eligible %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Adm No.</th>
+          <th>Student Name</th>
+          <th style="text-align:center;">Present</th>
+          <th style="text-align:center;">Total</th>
+          <th style="text-align:center;">Attendance %</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in eligible %}
+        <tr>
+          <td style="color:#aaa;font-size:13px;">{{ loop.index }}</td>
+          <td><strong>{{ s.admission_number }}</strong></td>
+          <td>{{ s.full_name }}</td>
+          <td style="text-align:center;font-weight:700;color:#2e7d32;">{{ s.present }}</td>
+          <td style="text-align:center;color:#888;">{{ s.total }}</td>
+          <td style="text-align:center;">
+            <div style="display:flex;align-items:center;gap:8px;justify-content:center;">
+              <div style="width:80px;height:8px;background:#eee;border-radius:4px;overflow:hidden;">
+                <div style="height:100%;border-radius:4px;width:{{ s.pct }}%;
+                  background:{% if s.pct >= 90 %}#27ae60{% elif s.pct >= 80 %}#2ecc71{% else %}#f39c12{% endif %};"></div>
+              </div>
+              <span style="font-weight:700;color:{% if s.pct >= 90 %}#27ae60{% else %}#2e7d32{% endif %};">{{ s.pct }}%</span>
+            </div>
+          </td>
+          <td>
+            <span style="background:#e8f5e9;color:#2e7d32;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;">
+              <i class="fas fa-check"></i> Eligible
+            </span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:40px;color:#aaa;">
+    <i class="fas fa-user-times" style="font-size:40px;margin-bottom:12px;display:block;opacity:0.4;"></i>
+    <p style="font-size:15px;">No trainees have reached <strong>{{ min_pct }}%</strong> attendance in this unit.</p>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Admin{% endblock %} | TTTTI</title>
+  <link rel="stylesheet" href="/static/css/base.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    #toast {
+      position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+      padding: 14px 20px; border-radius: 8px; font-size: 14px; font-weight: 600;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.18); display: flex; align-items: center; gap: 10px;
+      transition: opacity 0.4s ease; min-width: 240px; max-width: 360px;
+    }
+    #toast.success { background: #2e7d32; color: #fff; }
+    #toast.info    { background: #1565c0; color: #fff; }
+    #toast.error   { background: #c62828; color: #fff; }
+  </style>
+</head>
+<body>
+<button class="hamburger" id="hamburger" aria-label="Menu">&#9776;</button>
+<div class="sidebar-overlay" id="overlay"></div>
+
+<div class="admin-layout">
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <img src="{{ LOGO_URL }}" alt="Logo">
+      <h2>THIKA TECHNICAL</h2>
+      <h3>TRAINING INSTITUTE</h3>
+    </div>
+    <div class="sidebar-menu">
+      <a href="/admin/welcome"><i class="fas fa-home fa-fw"></i> Dashboard</a>
+      <a href="/admin/departments"><i class="fas fa-building fa-fw"></i> Departments</a>
+      <a href="/admin/trainers"><i class="fas fa-chalkboard-teacher fa-fw"></i> Trainers</a>
+      <a href="/admin/classes"><i class="fas fa-school fa-fw"></i> Classes</a>
+      <a href="/admin/students"><i class="fas fa-user-graduate fa-fw"></i> Students</a>
+      <a href="/admin/units"><i class="fas fa-book fa-fw"></i> Units</a>
+      <a href="/admin/assign_units"><i class="fas fa-link fa-fw"></i> Assign Units</a>
+      <a href="/admin/view_attendance"><i class="fas fa-clipboard-list fa-fw"></i> View Attendance</a>
+      <a href="/admin/import_data"><i class="fas fa-file-import fa-fw"></i> Import Data</a>
+      <a href="/admin/credentials"><i class="fas fa-key fa-fw"></i> Credentials</a>
+      <a href="/admin/class_list"><i class="fas fa-list-ol fa-fw"></i> Class List</a>
+      <a href="/admin/trainee_search"><i class="fas fa-search fa-fw"></i> Search Trainee</a>
+      <a href="/admin/assessment_sheet"><i class="fas fa-clipboard-check fa-fw"></i> Assessment Sheet</a>
+    </div>
+    <div class="sidebar-footer">
+      <a href="/admin/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </div>
+  </nav>
+
+  <main class="admin-main">
+    <div class="page-content">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% for category, message in messages %}
+  <div id="toast" class="{{ category }}">
+    <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'info' %}info-circle{% else %}exclamation-circle{% endif %}"></i>
+    {{ message }}
+  </div>
+  {% endfor %}
+{% endwith %}
+
+<script>
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('overlay');
+  const hamburger = document.getElementById('hamburger');
+  hamburger.addEventListener('click', () => {
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('open');
+  });
+  overlay.addEventListener('click', () => {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('open');
+  });
+  // Highlight active link
+  document.querySelectorAll('.sidebar-menu a').forEach(a => {
+    if (a.href === location.href || location.pathname.startsWith(new URL(a.href).pathname)) {
+      a.classList.add('active');
+    }
+  });
+  // Auto-dismiss toast
+  const toast = document.getElementById('toast');
+  if (toast) {
+    setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 400); }, 3500);
+  }
+</script>
+</body>
+</html>

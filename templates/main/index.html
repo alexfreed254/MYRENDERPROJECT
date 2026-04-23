@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TTTTI Attendance Management System</title>
+  <link rel="stylesheet" href="/static/css/base.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { background:linear-gradient(135deg,#1e5a9f 0%,#154070 100%); min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:'Segoe UI',sans-serif; }
+    .hero { text-align:center; color:#fff; margin-bottom:40px; }
+    .hero img { height:90px; border-radius:50%; border:3px solid rgba(255,255,255,.5); margin-bottom:16px; }
+    .hero h1 { font-size:22px; font-weight:700; margin-bottom:6px; }
+    .hero p  { font-size:14px; opacity:.8; }
+    .portal-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:20px; max-width:860px; width:100%; padding:0 20px; }
+    .portal-card { background:#fff; border-radius:16px; padding:32px 24px; text-align:center; text-decoration:none; color:#333; box-shadow:0 8px 32px rgba(0,0,0,.2); transition:transform .2s,box-shadow .2s; }
+    .portal-card:hover { transform:translateY(-4px); box-shadow:0 12px 40px rgba(0,0,0,.3); }
+    .portal-icon { width:64px; height:64px; border-radius:16px; display:flex; align-items:center; justify-content:center; font-size:28px; color:#fff; margin:0 auto 16px; }
+    .portal-card h3 { font-size:15px; font-weight:700; margin-bottom:6px; }
+    .portal-card p  { font-size:12px; color:#888; }
+  </style>
+</head>
+<body>
+  <div class="hero">
+    <img src="{{ LOGO_URL }}" alt="Logo">
+    <h1>THIKA TECHNICAL TRAINING INSTITUTE</h1>
+    <p>Attendance Management System — Select your portal to continue</p>
+  </div>
+
+  <div class="portal-grid">
+    <a href="/auth/login" class="portal-card">
+      <div class="portal-icon" style="background:linear-gradient(135deg,#7b1fa2,#4a148c)">
+        <i class="fas fa-shield-alt"></i>
+      </div>
+      <h3>Super Admin</h3>
+      <p>Full system control and monitoring</p>
+    </a>
+
+    <a href="/auth/login" class="portal-card">
+      <div class="portal-icon" style="background:linear-gradient(135deg,#1565c0,#0d47a1)">
+        <i class="fas fa-user-tie"></i>
+      </div>
+      <h3>Department Admin</h3>
+      <p>Manage your department</p>
+    </a>
+
+    <a href="/auth/login" class="portal-card">
+      <div class="portal-icon" style="background:linear-gradient(135deg,#1e5a9f,#154070)">
+        <i class="fas fa-chalkboard-teacher"></i>
+      </div>
+      <h3>Trainer / Lecturer</h3>
+      <p>Mark and manage attendance</p>
+    </a>
+
+    <a href="/auth/login" class="portal-card">
+      <div class="portal-icon" style="background:linear-gradient(135deg,#2e7d32,#1b5e20)">
+        <i class="fas fa-user-graduate"></i>
+      </div>
+      <h3>Student</h3>
+      <p>View your attendance records</p>
+    </a>
+  </div>
+</body>
+</html>

@@ -1,0 +1,39 @@
+{% extends 'admin/base.html' %}
+{% block title %}Departments{% endblock %}
+{% block content %}
+<h1 class="page-title"><i class="fas fa-building"></i> Manage Departments</h1>
+{% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+
+<div class="section-card">
+  <h3>Add New Department</h3>
+  <form method="post" action="/admin/departments" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+    <div class="form-group" style="margin:0;flex:1;min-width:200px;">
+      <label>Department Name</label>
+      <input type="text" name="name" class="form-control" required placeholder="e.g. Electrical">
+    </div>
+    <button type="submit" name="add_dept" value="1" class="btn btn-primary">
+      <i class="fas fa-plus"></i> Add Department
+    </button>
+  </form>
+</div>
+
+<div class="section-card">
+  <h3>Existing Departments</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>Name</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for d in depts %}
+        <tr>
+          <td>{{ d.id }}</td>
+          <td>{{ d.name }}</td>
+          <td><a href="/admin/departments?delete={{ d.id }}" class="btn btn-danger btn-sm" onclick="return confirm('Delete {{ d.name }}?')"><i class="fas fa-trash"></i></a></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="3" style="text-align:center;color:#888;padding:20px;">No departments yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

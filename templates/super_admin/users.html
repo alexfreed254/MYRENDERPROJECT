@@ -1,0 +1,70 @@
+{% extends "super_admin/base.html" %}
+{% block title %}All Users{% endblock %}
+{% block page_title %}All Users{% endblock %}
+
+{% block extra_style %}
+.page-wrap { padding:24px; }
+.card { background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.06); overflow:hidden; }
+.card-header { background:#4a148c; color:#fff; padding:14px 20px; font-size:14px; font-weight:600; display:flex; align-items:center; justify-content:space-between; }
+.filter-bar { padding:14px 20px; background:#fafafa; border-bottom:1px solid #eee; display:flex; gap:10px; flex-wrap:wrap; }
+.filter-bar a { padding:6px 14px; border-radius:20px; font-size:12px; font-weight:600; text-decoration:none; background:#eee; color:#555; }
+.filter-bar a.active { background:#7b1fa2; color:#fff; }
+table { width:100%; border-collapse:collapse; }
+th { background:#f5f5f5; padding:11px 14px; text-align:left; font-size:12px; color:#555; border-bottom:2px solid #eee; }
+td { padding:11px 14px; border-bottom:1px solid #f0f0f0; font-size:13px; }
+.badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; }
+.badge-super_admin { background:#ede7f6; color:#4a148c; }
+.badge-dept_admin  { background:#e3f2fd; color:#1565c0; }
+.badge-trainer     { background:#e8f5e9; color:#2e7d32; }
+.badge-student     { background:#fff3e0; color:#e65100; }
+.badge-active   { background:#e8f5e9; color:#2e7d32; }
+.badge-inactive { background:#ffebee; color:#c62828; }
+.btn { padding:5px 12px; border:none; border-radius:4px; cursor:pointer; font-size:12px; font-weight:600; }
+.btn-danger  { background:#c62828; color:#fff; }
+.btn-success { background:#2e7d32; color:#fff; }
+{% endblock %}
+
+{% block content %}
+<div class="page-wrap">
+  <div class="card">
+    <div class="card-header">
+      <span><i class="fas fa-users"></i> Users ({{ users|length }})</span>
+    </div>
+    <div class="filter-bar">
+      <a href="/super-admin/users" class="{% if not role_filter %}active{% endif %}">All</a>
+      <a href="?role=super_admin"  class="{% if role_filter=='super_admin' %}active{% endif %}">Super Admin</a>
+      <a href="?role=dept_admin"   class="{% if role_filter=='dept_admin' %}active{% endif %}">Dept Admin</a>
+      <a href="?role=trainer"      class="{% if role_filter=='trainer' %}active{% endif %}">Trainer</a>
+      <a href="?role=student"      class="{% if role_filter=='student' %}active{% endif %}">Student</a>
+    </div>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr><th>Name</th><th>Role</th><th>Department</th><th>Status</th><th>Action</th></tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          <tr>
+            <td><strong>{{ u.full_name }}</strong></td>
+            <td><span class="badge badge-{{ u.role }}">{{ u.role.replace('_',' ').title() }}</span></td>
+            <td>{{ u.departments.name if u.departments else '—' }}</td>
+            <td><span class="badge {% if u.is_active %}badge-active{% else %}badge-inactive{% endif %}">{{ 'Active' if u.is_active else 'Disabled' }}</span></td>
+            <td>
+              <form method="post" action="/super-admin/users/toggle" style="display:inline;">
+                <input type="hidden" name="user_id" value="{{ u.id }}">
+                <input type="hidden" name="is_active" value="{{ 'false' if u.is_active else 'true' }}">
+                <button type="submit" class="btn {% if u.is_active %}btn-danger{% else %}btn-success{% endif %}">
+                  {{ 'Disable' if u.is_active else 'Enable' }}
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" style="text-align:center;color:#aaa;padding:32px;">No users found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

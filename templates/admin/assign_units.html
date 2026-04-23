@@ -1,0 +1,166 @@
+{% extends 'admin/base.html' %}
+{% block title %}Assign Units{% endblock %}
+{% block content %}
+<h1 class="page-title"><i class="fas fa-link"></i> Assign Units</h1>
+{% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+{% if success %}<div class="alert alert-success">{{ success }}</div>{% endif %}
+
+<!-- New Assignment Form -->
+<div class="section-card">
+  <h3>New Assignment</h3>
+  <p style="font-size:13px;color:#888;margin-bottom:12px;">Select a department to filter classes and trainers.</p>
+  <form method="get" action="/admin/assign_units" style="margin-bottom:16px;">
+    <div class="form-group" style="max-width:300px;">
+      <label>Filter by Department</label>
+      <select name="filter_dept" class="form-control" onchange="this.form.submit()">
+        <option value="">-- All Departments --</option>
+        {% for d in depts_list %}<option value="{{ d.id }}" {% if filter_dept == d.id %}selected{% endif %}>{{ d.name }}</option>{% endfor %}
+      </select>
+    </div>
+  </form>
+  <form method="post" action="/admin/assign_units?filter_dept={{ filter_dept }}"
+        style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:end;">
+    <div class="form-group" style="margin:0;">
+      <label>Class <span style="color:red">*</span></label>
+      <select name="class_id" class="form-control" required>
+        <option value="">Select Class</option>
+        {% for c in classes %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="form-group" style="margin:0;">
+      <label>Unit <span style="color:red">*</span></label>
+      <select name="unit_id" class="form-control" required>
+        <option value="">Select Unit</option>
+        {% for u in units %}<option value="{{ u.id }}">{{ u.code }} - {{ u.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="form-group" style="margin:0;">
+      <label>Trainer <span style="color:red">*</span></label>
+      <select name="trainer_id" class="form-control" required>
+        <option value="">Select Trainer</option>
+        {% for t in trainers %}<option value="{{ t.id }}">{{ t.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="form-group" style="margin:0;">
+      <label>Year <span style="color:red">*</span></label>
+      <select name="year" class="form-control" required>
+        {% for y in range(2026, 2036) %}<option value="{{ y }}">{{ y }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="form-group" style="margin:0;">
+      <label>Term <span style="color:red">*</span></label>
+      <select name="term" class="form-control" required>
+        <option value="1">Term 1 (Jan–Apr)</option>
+        <option value="2">Term 2 (May–Aug)</option>
+        <option value="3">Term 3 (Sep–Dec)</option>
+      </select>
+    </div>
+    <button type="submit" name="assign" value="1" class="btn btn-primary" style="height:40px;">
+      <i class="fas fa-plus"></i> Assign
+    </button>
+  </form>
+</div>
+
+<!-- CSV Import -->
+<div class="section-card">
+  <h3>Import Assignments (CSV)</h3>
+  <form method="post" action="/admin/assign_units" enctype="multipart/form-data"
+        style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+    <div class="form-group" style="margin:0;flex:1;min-width:200px;">
+      <label style="color:#666;font-weight:400;">Format: Class Name, Unit Code, Trainer Username, Year, Term</label>
+      <input type="file" name="csv_file" class="form-control" required accept=".csv">
+    </div>
+    <button type="submit" name="import_csv" value="1" class="btn btn-primary">
+      <i class="fas fa-upload"></i> Import
+    </button>
+  </form>
+</div>
+
+<!-- Filter -->
+<div class="section-card" style="background:#f0f7ff;">
+  <h3>Filter Assignments</h3>
+  <form method="get" action="/admin/assign_units"
+        style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+    <div class="form-group" style="margin:0;flex:1;min-width:140px;">
+      <label>Department</label>
+      <select name="filter_dept" class="form-control" onchange="this.form.submit()">
+        <option value="">All</option>
+        {% for d in depts_list %}<option value="{{ d.id }}" {% if filter_dept == d.id %}selected{% endif %}>{{ d.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="form-group" style="margin:0;flex:1;min-width:140px;">
+      <label>Class</label>
+      <select name="filter_class" class="form-control">
+        <option value="">All</option>
+        {% for c in classes %}<option value="{{ c.id }}" {% if filter_class == c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="form-group" style="margin:0;flex:1;min-width:140px;">
+      <label>Trainer</label>
+      <select name="filter_trainer" class="form-control">
+        <option value="">All</option>
+        {% for t in trainers %}<option value="{{ t.id }}" {% if filter_trainer == t.id %}selected{% endif %}>{{ t.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="form-group" style="margin:0;min-width:110px;">
+      <label>Year</label>
+      <select name="filter_year" class="form-control">
+        <option value="">All Years</option>
+        {% for y in range(2026, 2036) %}<option value="{{ y }}" {% if filter_year == y %}selected{% endif %}>{{ y }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="form-group" style="margin:0;min-width:160px;">
+      <label>Term</label>
+      <select name="filter_term" class="form-control">
+        <option value="">All Terms</option>
+        <option value="1" {% if filter_term == 1 %}selected{% endif %}>Term 1 (Jan–Apr)</option>
+        <option value="2" {% if filter_term == 2 %}selected{% endif %}>Term 2 (May–Aug)</option>
+        <option value="3" {% if filter_term == 3 %}selected{% endif %}>Term 3 (Sep–Dec)</option>
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Filter</button>
+    {% if filter_class or filter_trainer or filter_year or filter_term %}
+    <a href="/admin/assign_units{% if filter_dept %}?filter_dept={{ filter_dept }}{% endif %}"
+       class="btn" style="background:#6c757d;color:#fff;">Clear</a>
+    {% endif %}
+  </form>
+</div>
+
+<!-- Assignments Table -->
+<div class="section-card">
+  <h3>Current Assignments</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Class</th><th>Unit</th><th>Trainer</th><th>Year</th><th>Term</th><th>Action</th></tr>
+      </thead>
+      <tbody>
+        {% for row in assignments %}
+        <tr>
+          <td>{{ row.class_name }}</td>
+          <td>{{ row.code }} — {{ row.unit_name }}</td>
+          <td>{{ row.trainer_name }}</td>
+          <td>{{ row.year }}</td>
+          <td>
+            <span style="background:{% if row.term == 1 %}#e3f2fd{% elif row.term == 2 %}#e8f5e9{% else %}#fff3e0{% endif %};
+                         color:{% if row.term == 1 %}#1e5a9f{% elif row.term == 2 %}#2e7d32{% else %}#e65100{% endif %};
+                         padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;">
+              Term {{ row.term }}
+              ({% if row.term == 1 %}Jan–Apr{% elif row.term == 2 %}May–Aug{% else %}Sep–Dec{% endif %})
+            </span>
+          </td>
+          <td>
+            <a href="/admin/assign_units?delete={{ row.id }}" class="btn btn-danger btn-sm"
+               onclick="return confirm('Remove this assignment?')">
+              <i class="fas fa-trash"></i>
+            </a>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" style="text-align:center;color:#aaa;padding:24px;">No assignments yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

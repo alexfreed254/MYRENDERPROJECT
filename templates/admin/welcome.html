@@ -1,0 +1,76 @@
+{% extends 'admin/base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<h1 class="page-title"><i class="fas fa-home"></i> Admin Dashboard</h1>
+
+<!-- Summary cards -->
+<div class="summary-cards">
+  <a href="/admin/departments" class="summary-card" style="background:#e3f2fd;">
+    <div class="sc-num" style="color:#1e5a9f;">{{ depts_count }}</div>
+    <div class="sc-lbl" style="color:#1e5a9f;"><i class="fas fa-building"></i> Departments</div>
+  </a>
+  <a href="/admin/trainers" class="summary-card" style="background:#f3e5f5;">
+    <div class="sc-num" style="color:#6a1b9a;">{{ trainers_count }}</div>
+    <div class="sc-lbl" style="color:#6a1b9a;"><i class="fas fa-chalkboard-teacher"></i> Trainers</div>
+  </a>
+  <a href="/admin/classes" class="summary-card" style="background:#e8f5e9;">
+    <div class="sc-num" style="color:#2e7d32;">{{ classes_count }}</div>
+    <div class="sc-lbl" style="color:#2e7d32;"><i class="fas fa-school"></i> Classes</div>
+  </a>
+  <a href="/admin/students" class="summary-card" style="background:#fff3e0;">
+    <div class="sc-num" style="color:#e65100;">{{ students_count }}</div>
+    <div class="sc-lbl" style="color:#e65100;"><i class="fas fa-user-graduate"></i> Trainees</div>
+  </a>
+  <a href="/admin/units" class="summary-card" style="background:#fce4ec;">
+    <div class="sc-num" style="color:#880e4f;">{{ units_count }}</div>
+    <div class="sc-lbl" style="color:#880e4f;"><i class="fas fa-book"></i> Units</div>
+  </a>
+</div>
+
+<!-- Per-department breakdown -->
+<div class="section-card">
+  <h3><i class="fas fa-chart-bar"></i> Breakdown by Department</h3>
+  {% if dept_stats %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Department</th>
+          <th style="text-align:center;"><i class="fas fa-school"></i> Classes</th>
+          <th style="text-align:center;"><i class="fas fa-user-graduate"></i> Trainees</th>
+          <th style="text-align:center;"><i class="fas fa-chalkboard-teacher"></i> Trainers</th>
+          <th>Distribution</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for d in dept_stats %}
+        {% set pct = ((d.student_count / students_count) * 100) | round(1) if students_count > 0 else 0 %}
+        <tr>
+          <td><strong style="color:#1e5a9f;">{{ d.name }}</strong></td>
+          <td style="text-align:center;">
+            <span style="background:#e8f5e9;color:#2e7d32;padding:3px 10px;border-radius:20px;font-weight:700;font-size:13px;">{{ d.class_count }}</span>
+          </td>
+          <td style="text-align:center;">
+            <span style="background:#fff3e0;color:#e65100;padding:3px 10px;border-radius:20px;font-weight:700;font-size:13px;">{{ d.student_count }}</span>
+          </td>
+          <td style="text-align:center;">
+            <span style="background:#f3e5f5;color:#6a1b9a;padding:3px 10px;border-radius:20px;font-weight:700;font-size:13px;">{{ d.trainer_count }}</span>
+          </td>
+          <td style="min-width:140px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="progress-bar">
+                <div class="progress-fill pf-high" style="width:{{ pct }}%;"></div>
+              </div>
+              <span style="font-size:12px;color:#888;min-width:36px;">{{ pct }}%</span>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p style="color:#aaa;text-align:center;padding:24px;">No departments yet. <a href="/admin/departments">Add one</a> to get started.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Student Dashboard | TTTTI</title>
+  <link rel="stylesheet" href="/static/css/base.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+<!-- Top nav -->
+<nav class="topnav">
+  <div class="topnav-brand">
+    <img src="{{ LOGO_URL }}" alt="Logo">
+    <div class="topnav-brand-text">
+      <h1>THIKA TECHNICAL TRAINING INSTITUTE</h1>
+      <p>Student Portal</p>
+    </div>
+  </div>
+  <div class="topnav-right">
+    <span><i class="fas fa-user-graduate"></i> {{ student.full_name }} &bull; {{ student.admission_number }}</span>
+    <a href="/student/logout" class="topnav-btn danger"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  </div>
+</nav>
+
+<div class="dash-wrap">
+
+  <!-- Summary stats -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:linear-gradient(135deg,#3498db,#2980b9);">
+        <i class="fas fa-book"></i>
+      </div>
+      <div class="stat-info">
+        <h3>Total Units</h3>
+        <p>{{ attendance_data | length }}</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:linear-gradient(135deg,#2ecc71,#27ae60);">
+        <i class="fas fa-check-circle"></i>
+      </div>
+      <div class="stat-info">
+        <h3>Classes Attended</h3>
+        <p>{{ total_attended }}</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:linear-gradient(135deg,#9b59b6,#8e44ad);">
+        <i class="fas fa-chart-pie"></i>
+      </div>
+      <div class="stat-info">
+        <h3>Avg Attendance</h3>
+        <p class="{% if overall_pct >= 75 %}pct-high{% elif overall_pct >= 50 %}pct-med{% else %}pct-low{% endif %}">
+          {{ overall_pct }}%
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Attendance table -->
+  <div class="card">
+    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+      <span><i class="fas fa-clipboard-list"></i> Attendance Dashboard</span>
+      <span style="background:#e3f2fd;color:var(--primary);padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;">
+        {{ current_month }}
+      </span>
+    </div>
+
+    {% if attendance_data %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Unit Code</th>
+            <th>Unit Name</th>
+            <th style="text-align:center;">Attended</th>
+            <th style="text-align:center;">Total</th>
+            <th>Attendance %</th>
+            <th>Last Update</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in attendance_data %}
+          {% set attended = row.attended or 0 %}
+          {% set total = row.total_records or 0 %}
+          {% set pct = ((attended / total) * 100) | round(1) if total > 0 else 0 %}
+          {% set sc = 'low' if pct < 75 else ('med' if pct < 90 else 'high') %}
+          <tr style="cursor:pointer;" onclick="window.location='/student/unit_detail?unit_id={{ row.id }}'">
+            <td><span class="unit-badge">{{ row.unit_code }}</span></td>
+            <td>{{ row.unit_name }}</td>
+            <td style="text-align:center;font-weight:700;">{{ attended }}</td>
+            <td style="text-align:center;color:#888;">{{ total }}</td>
+            <td style="min-width:130px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="progress-bar">
+                  <div class="progress-fill pf-{{ sc }}" style="width:{{ pct }}%;"></div>
+                </div>
+                <span class="pct-{{ sc }}" style="min-width:38px;font-size:13px;">{{ pct }}%</span>
+              </div>
+            </td>
+            <td style="font-size:12px;color:#888;white-space:nowrap;">
+              {% if row.last_update %}{{ row.last_update.strftime('%d %b, %H:%M') }}{% else %}—{% endif %}
+            </td>
+            <td>
+              <a href="/student/unit_detail?unit_id={{ row.id }}" class="btn btn-sm btn-primary"
+                 onclick="event.stopPropagation()">View</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:48px 20px;color:#aaa;">
+      <i class="fas fa-clipboard-list" style="font-size:42px;margin-bottom:14px;display:block;opacity:0.35;"></i>
+      No attendance records found yet.
+    </div>
+    {% endif %}
+  </div>
+
+</div><!-- /dash-wrap -->
+</body>
+</html>

@@ -1,0 +1,55 @@
+{% extends "super_admin/base.html" %}
+{% block title %}System Logs{% endblock %}
+{% block page_title %}System Audit Logs{% endblock %}
+
+{% block extra_style %}
+.page-wrap { padding:24px; }
+.card { background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.06); overflow:hidden; }
+.card-header { background:#4a148c; color:#fff; padding:14px 20px; font-size:14px; font-weight:600; }
+table { width:100%; border-collapse:collapse; font-size:12px; }
+th { background:#f5f5f5; padding:10px 14px; text-align:left; color:#555; border-bottom:2px solid #eee; }
+td { padding:10px 14px; border-bottom:1px solid #f5f5f5; vertical-align:top; }
+.action-badge { display:inline-block; background:#ede7f6; color:#4a148c; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600; }
+.pager { display:flex; gap:12px; padding:16px 20px; justify-content:flex-end; }
+.pager a { padding:6px 14px; background:#7b1fa2; color:#fff; border-radius:6px; text-decoration:none; font-size:13px; }
+{% endblock %}
+
+{% block content %}
+<div class="page-wrap">
+  <div class="card">
+    <div class="card-header"><i class="fas fa-history"></i> Audit Log — Page {{ page }}</div>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Actor</th>
+            <th>Role</th>
+            <th>Action</th>
+            <th>Target</th>
+            <th>IP</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in logs %}
+          <tr>
+            <td style="white-space:nowrap;color:#888;">{{ log.created_at[:19].replace('T',' ') if log.created_at else '—' }}</td>
+            <td>{{ log.user_profiles.full_name if log.user_profiles else '—' }}</td>
+            <td>{{ log.actor_role or '—' }}</td>
+            <td><span class="action-badge">{{ log.action }}</span></td>
+            <td>{{ log.target or '—' }}</td>
+            <td style="color:#aaa;">{{ log.ip_address or '—' }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6" style="text-align:center;color:#aaa;padding:32px;">No logs found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="pager">
+      {% if page > 1 %}<a href="?page={{ page - 1 }}">← Previous</a>{% endif %}
+      {% if logs|length == 50 %}<a href="?page={{ page + 1 }}">Next →</a>{% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

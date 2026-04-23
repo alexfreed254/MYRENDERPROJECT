@@ -1,0 +1,81 @@
+{% extends 'admin/base.html' %}
+{% block title %}Class List{% endblock %}
+{% block content %}
+<h1 class="page-title"><i class="fas fa-list-ol"></i> Class List</h1>
+
+<div class="section-card" style="margin-bottom:20px;">
+  <h3>Filter</h3>
+  <form method="get" action="/admin/class_list"
+        style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+    <div class="form-group" style="margin:0;flex:1;min-width:180px;">
+      <label>Department</label>
+      <select name="dept_id" class="form-control" onchange="this.form.submit()">
+        <option value="">-- All Departments --</option>
+        {% for d in departments %}
+          <option value="{{ d.id }}" {% if dept_id == d.id %}selected{% endif %}>{{ d.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group" style="margin:0;flex:1;min-width:180px;">
+      <label>Class</label>
+      <select name="class_id" class="form-control" onchange="this.form.submit()">
+        <option value="">-- Select Class --</option>
+        {% for c in classes %}
+          <option value="{{ c.id }}" {% if class_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> View</button>
+  </form>
+</div>
+
+{% if class_id and cls %}
+<div class="section-card">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+    <div>
+      <h3 style="margin:0;border:none;padding:0;">
+        {{ cls.name }} — {{ cls.dept_name }}
+      </h3>
+      <p style="color:#888;font-size:13px;margin-top:4px;">{{ students|length }} student(s)</p>
+    </div>
+    <a href="/admin/class_list_pdf?class_id={{ class_id }}"
+       class="btn btn-success" target="_blank">
+      <i class="fas fa-file-pdf"></i> Download PDF
+    </a>
+  </div>
+
+  {% if students %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:60px;">#</th>
+          <th>Admission No</th>
+          <th>Student Name</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in students %}
+        <tr>
+          <td style="color:#888;">{{ loop.index }}</td>
+          <td><strong style="font-family:monospace;color:#1e5a9f;">{{ s.admission_number }}</strong></td>
+          <td>{{ s.full_name }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:30px;color:#aaa;">
+    <i class="fas fa-users" style="font-size:36px;margin-bottom:10px;display:block;"></i>
+    No students found in this class.
+  </div>
+  {% endif %}
+</div>
+{% elif not class_id %}
+<div class="section-card" style="text-align:center;padding:40px;color:#aaa;">
+  <i class="fas fa-arrow-up" style="font-size:32px;margin-bottom:10px;display:block;"></i>
+  Select a department and class above to view the class list.
+</div>
+{% endif %}
+{% endblock %}

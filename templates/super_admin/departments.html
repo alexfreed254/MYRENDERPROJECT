@@ -1,0 +1,64 @@
+{% extends "super_admin/base.html" %}
+{% block title %}Departments{% endblock %}
+{% block page_title %}Manage Departments{% endblock %}
+
+{% block extra_style %}
+.page-wrap { padding:24px; }
+.card { background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.06); margin-bottom:24px; overflow:hidden; }
+.card-header { background:#7b1fa2; color:#fff; padding:14px 20px; font-size:14px; font-weight:600; }
+.card-body { padding:20px; }
+.inline-form { display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; }
+.form-group label { display:block; font-size:12px; font-weight:600; color:#555; margin-bottom:5px; }
+.form-group input { padding:9px 12px; border:1px solid #ddd; border-radius:6px; font-size:13px; min-width:220px; }
+.btn { padding:9px 18px; border:none; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600; }
+.btn-primary { background:#7b1fa2; color:#fff; }
+.btn-danger  { background:#c62828; color:#fff; padding:6px 12px; font-size:12px; }
+.error-box { background:#ffebee; color:#c62828; border-radius:6px; padding:10px 14px; font-size:13px; margin-bottom:16px; }
+table { width:100%; border-collapse:collapse; }
+th { background:#f5f5f5; padding:11px 14px; text-align:left; font-size:12px; color:#555; border-bottom:2px solid #eee; }
+td { padding:11px 14px; border-bottom:1px solid #f0f0f0; font-size:13px; }
+{% endblock %}
+
+{% block content %}
+<div class="page-wrap">
+  <div class="card">
+    <div class="card-header"><i class="fas fa-plus"></i> Add Department</div>
+    <div class="card-body">
+      {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
+      <form method="post">
+        <input type="hidden" name="add_dept" value="1">
+        <div class="inline-form">
+          <div class="form-group">
+            <label>Department Name</label>
+            <input type="text" name="name" placeholder="e.g. INFORMATION TECHNOLOGY" required>
+          </div>
+          <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Add</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><i class="fas fa-list"></i> Departments ({{ depts|length }})</div>
+    <table>
+      <thead><tr><th>#</th><th>Name</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for d in depts %}
+        <tr>
+          <td style="color:#aaa;">{{ loop.index }}</td>
+          <td><strong>{{ d.name }}</strong></td>
+          <td>
+            <a href="?delete={{ d.id }}" class="btn btn-danger"
+               onclick="return confirm('Delete {{ d.name }}? This will remove all related data.')">
+              <i class="fas fa-trash"></i> Delete
+            </a>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="3" style="text-align:center;color:#aaa;padding:32px;">No departments yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

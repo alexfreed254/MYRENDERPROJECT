@@ -1,0 +1,96 @@
+{% extends 'admin/base.html' %}
+{% block title %}Students{% endblock %}
+{% block content %}
+<h1 class="page-title"><i class="fas fa-user-graduate"></i> Manage Students</h1>
+{% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+{% if success %}<div class="alert alert-success">{{ success }}</div>{% endif %}
+
+<div class="section-card">
+  <h3>Add New Student</h3>
+  <p style="font-size:13px;color:#888;margin-bottom:12px;">Select a department first to filter the class list.</p>
+  <form method="get" action="/admin/students" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px;">
+    <div class="form-group" style="margin:0;flex:1;min-width:180px;">
+      <label>Filter by Department</label>
+      <select name="filter_dept" class="form-control" onchange="this.form.submit()">
+        <option value="">-- All Departments --</option>
+        {% for d in depts_list %}<option value="{{ d.id }}" {% if filter_dept == d.id %}selected{% endif %}>{{ d.name }}</option>{% endfor %}
+      </select>
+    </div>
+  </form>
+  <form method="post" action="/admin/students?filter_dept={{ filter_dept }}" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;align-items:end;">
+    <div class="form-group" style="margin:0;">
+      <label>Full Name <span style="color:red">*</span></label>
+      <input type="text" name="name" class="form-control" required>
+    </div>
+    <div class="form-group" style="margin:0;">
+      <label>Admission Number <span style="color:red">*</span></label>
+      <input type="text" name="admission_number" class="form-control" required>
+    </div>
+    <div class="form-group" style="margin:0;">
+      <label>Class <span style="color:red">*</span></label>
+      <select name="class_id" class="form-control" required>
+        <option value="">Select Class</option>
+        {% for c in classes_list %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <button type="submit" name="add_student" value="1" class="btn btn-primary" style="height:40px;"><i class="fas fa-plus"></i> Add Student</button>
+  </form>
+</div>
+
+<div class="section-card">
+  <h3>Import Students (CSV)</h3>
+  <form method="post" action="/admin/students" enctype="multipart/form-data" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+    <div class="form-group" style="margin:0;flex:1;min-width:200px;">
+      <label style="color:#666;font-weight:400;">Format: Full Name, Admission Number, Class Name</label>
+      <input type="file" name="csv_file" class="form-control" required accept=".csv">
+    </div>
+    <button type="submit" name="import_csv" value="1" class="btn btn-primary"><i class="fas fa-upload"></i> Import CSV</button>
+  </form>
+</div>
+
+<div class="section-card" style="background:#f0f7ff;">
+  <h3>Filter Students</h3>
+  <form method="get" action="/admin/students" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+    <div class="form-group" style="margin:0;flex:1;min-width:150px;">
+      <label>Department</label>
+      <select name="filter_dept" class="form-control" onchange="this.form.submit()">
+        <option value="">All Departments</option>
+        {% for d in depts_list %}<option value="{{ d.id }}" {% if filter_dept == d.id %}selected{% endif %}>{{ d.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="form-group" style="margin:0;flex:1;min-width:150px;">
+      <label>Class</label>
+      <select name="filter_class" class="form-control">
+        <option value="">All Classes</option>
+        {% for c in classes_list %}<option value="{{ c.id }}" {% if filter_class == c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="form-group" style="margin:0;flex:1;min-width:150px;">
+      <label>Admission No</label>
+      <input type="text" name="filter_adm" class="form-control" value="{{ filter_adm }}" placeholder="Search...">
+    </div>
+    <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Filter</button>
+  </form>
+</div>
+
+<div class="section-card">
+  <h3>Existing Students</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Adm No</th><th>Name</th><th>Class</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for s in students_list %}
+        <tr>
+          <td>{{ s.admission_number }}</td>
+          <td>{{ s.full_name }}</td>
+          <td>{{ s.class_name }}</td>
+          <td><a href="/admin/students?delete={{ s.id }}" class="btn btn-danger btn-sm" onclick="return confirm('Delete?')"><i class="fas fa-trash"></i></a></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" style="text-align:center;color:#888;padding:20px;">No students yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

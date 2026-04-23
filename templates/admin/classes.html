@@ -1,0 +1,70 @@
+{% extends 'admin/base.html' %}
+{% block title %}Classes{% endblock %}
+{% block content %}
+<h1 class="page-title"><i class="fas fa-school"></i> Manage Classes</h1>
+{% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+{% if success %}<div class="alert alert-success">{{ success }}</div>{% endif %}
+
+<div class="section-card">
+  <h3>Add New Class</h3>
+  <form method="post" action="/admin/classes" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;align-items:end;">
+    <div class="form-group" style="margin:0;">
+      <label>Department <span style="color:red">*</span></label>
+      <select name="department_id" class="form-control" required>
+        <option value="">-- Select Department --</option>
+        {% for d in depts_list %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="form-group" style="margin:0;">
+      <label>Class Name <span style="color:red">*</span></label>
+      <input type="text" name="name" class="form-control" required placeholder="e.g. ELECT-1">
+    </div>
+    <button type="submit" name="add_class" value="1" class="btn btn-primary" style="height:40px;"><i class="fas fa-plus"></i> Add Class</button>
+  </form>
+</div>
+
+<div class="section-card">
+  <h3>Import Classes (CSV)</h3>
+  <form method="post" action="/admin/classes" enctype="multipart/form-data" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+    <div class="form-group" style="margin:0;flex:1;min-width:200px;">
+      <label style="color:#666;font-weight:400;">Format: Class Name, Department Name</label>
+      <input type="file" name="csv_file" class="form-control" required accept=".csv">
+    </div>
+    <button type="submit" name="import_csv" value="1" class="btn btn-primary"><i class="fas fa-upload"></i> Import CSV</button>
+  </form>
+</div>
+
+<div class="section-card" style="background:#f0f7ff;">
+  <h3>Filter by Department</h3>
+  <form method="get" action="/admin/classes" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+    <div class="form-group" style="margin:0;flex:1;min-width:200px;">
+      <label>Department</label>
+      <select name="filter_dept" class="form-control" onchange="this.form.submit()">
+        <option value="">All Departments</option>
+        {% for d in depts_list %}<option value="{{ d.id }}" {% if filter_dept == d.id %}selected{% endif %}>{{ d.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Filter</button>
+  </form>
+</div>
+
+<div class="section-card">
+  <h3>Existing Classes {% if filter_dept %}<span style="font-size:13px;color:#888;font-weight:400;">— filtered by department</span>{% endif %}</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Class Name</th><th>Department</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for c in classes_list %}
+        <tr>
+          <td><strong>{{ c.name }}</strong></td>
+          <td>{{ c.dept_name }}</td>
+          <td><a href="/admin/classes?delete={{ c.id }}" class="btn btn-danger btn-sm" onclick="return confirm('Delete {{ c.name }}?')"><i class="fas fa-trash"></i></a></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="3" style="text-align:center;color:#888;padding:20px;">No classes yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

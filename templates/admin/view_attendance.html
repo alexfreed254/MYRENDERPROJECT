@@ -1,0 +1,172 @@
+{% extends 'admin/base.html' %}
+{% block title %}View Attendance{% endblock %}
+{% block content %}
+<h1 class="page-title"><i class="fas fa-clipboard-list"></i> View Attendance</h1>
+
+<!-- Filter Card -->
+<div class="section-card" style="margin-bottom:24px;">
+  <h3 style="display:flex;align-items:center;gap:8px;"><i class="fas fa-filter" style="color:#1e5a9f;"></i> Filter Attendance Records</h3>
+  <form method="get" action="/admin/view_attendance" id="filterForm">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-top:4px;">
+
+      <div class="form-group" style="margin:0;">
+        <label>Department</label>
+        <select name="dept_id" class="form-control" onchange="this.form.submit()">
+          <option value="">All Departments</option>
+          {% for d in departments %}
+            <option value="{{ d.id }}" {% if dept_id == d.id %}selected{% endif %}>{{ d.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group" style="margin:0;">
+        <label>Class</label>
+        <select name="class_id" class="form-control">
+          <option value="">Select Class</option>
+          {% for c in classes %}
+            <option value="{{ c.id }}" {% if class_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group" style="margin:0;">
+        <label>Unit</label>
+        <select name="unit_id" class="form-control">
+          <option value="">Select Unit</option>
+          {% for u in units %}
+            <option value="{{ u.id }}" {% if unit_id == u.id %}selected{% endif %}>{{ u.code }} — {{ u.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group" style="margin:0;">
+        <label>Week</label>
+        <select name="week" class="form-control">
+          <option value="">Select Week</option>
+          {% for i in range(1, 53) %}
+            <option value="{{ i }}" {% if week == i %}selected{% endif %}>Week {{ i }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group" style="margin:0;">
+        <label>Lesson</label>
+        <select name="lesson" class="form-control">
+          <option value="">Select Lesson</option>
+          {% for l in ['L1','L2','L3','L4'] %}
+            <option value="{{ l }}" {% if lesson == l %}selected{% endif %}>{{ l }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group" style="margin:0;">
+        <label>Year</label>
+        <select name="year" class="form-control">
+          <option value="">All Years</option>
+          {% for y in range(2026, 2036) %}
+            <option value="{{ y }}" {% if year == y %}selected{% endif %}>{{ y }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group" style="margin:0;">
+        <label>Term</label>
+        <select name="term" class="form-control">
+          <option value="">All Terms</option>
+          <option value="1" {% if term == 1 %}selected{% endif %}>Term 1 (Jan–Apr)</option>
+          <option value="2" {% if term == 2 %}selected{% endif %}>Term 2 (May–Aug)</option>
+          <option value="3" {% if term == 3 %}selected{% endif %}>Term 3 (Sep–Dec)</option>
+        </select>
+      </div>
+
+    </div>
+    <div style="margin-top:16px;">
+      <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> View Records</button>
+      {% if class_id or unit_id or week or lesson %}
+      <a href="/admin/view_attendance{% if dept_id %}?dept_id={{ dept_id }}{% endif %}"
+         class="btn" style="background:#6c757d;color:#fff;margin-left:8px;">
+        <i class="fas fa-times"></i> Clear Filters
+      </a>
+      {% endif %}
+    </div>
+  </form>
+</div>
+
+<!-- Results -->
+{% if class_id and unit_id and week and lesson %}
+<div class="section-card">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+    <h3 style="margin:0;border:none;padding:0;display:flex;align-items:center;gap:8px;">
+      <i class="fas fa-list-alt" style="color:#1e5a9f;"></i>
+      Attendance Records
+      {% if attendance %}
+        <span style="background:#e3f2fd;color:#1e5a9f;padding:3px 10px;border-radius:20px;font-size:13px;font-weight:600;">
+          {{ attendance|length }} students
+        </span>
+      {% endif %}
+    </h3>
+    <a href="/admin/download_attendance_pdf?class_id={{ class_id }}&unit_id={{ unit_id }}&week={{ week }}&lesson={{ lesson }}&year={{ year }}&term={{ term }}"
+       class="btn btn-success" target="_blank">
+      <i class="fas fa-file-pdf"></i> Download PDF
+    </a>
+  </div>
+
+  {% if not attendance %}
+  <div style="text-align:center;padding:40px;color:#aaa;">
+    <i class="fas fa-inbox" style="font-size:48px;margin-bottom:12px;display:block;"></i>
+    <p style="font-size:15px;">No records found for this selection.</p>
+  </div>
+  {% else %}
+  <!-- Summary pills -->
+  {% set present_count = attendance | selectattr('status', 'equalto', 'Present') | list | length %}
+  {% set absent_count = attendance | length - present_count %}
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+    <div style="background:#e8f5e9;color:#2e7d32;padding:10px 18px;border-radius:8px;font-weight:700;font-size:14px;">
+      <i class="fas fa-check-circle"></i> Present: {{ present_count }}
+    </div>
+    <div style="background:#ffebee;color:#c62828;padding:10px 18px;border-radius:8px;font-weight:700;font-size:14px;">
+      <i class="fas fa-times-circle"></i> Absent: {{ absent_count }}
+    </div>
+    <div style="background:#e3f2fd;color:#1e5a9f;padding:10px 18px;border-radius:8px;font-weight:700;font-size:14px;">
+      <i class="fas fa-users"></i> Total: {{ attendance|length }}
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Admission No</th>
+          <th>Student Name</th>
+          <th>Status</th>
+          <th>Date Recorded</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in attendance %}
+        <tr>
+          <td style="color:#888;font-size:13px;">{{ loop.index }}</td>
+          <td><strong>{{ r.admission_number }}</strong></td>
+          <td>{{ r.full_name }}</td>
+          <td>
+            {% if r.status == 'Present' %}
+              <span style="background:#e8f5e9;color:#2e7d32;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;">
+                <i class="fas fa-check"></i> Present
+              </span>
+            {% else %}
+              <span style="background:#ffebee;color:#c62828;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;">
+                <i class="fas fa-times"></i> Absent
+              </span>
+            {% endif %}
+          </td>
+          <td style="font-size:13px;color:#666;">{{ r.attendance_date }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

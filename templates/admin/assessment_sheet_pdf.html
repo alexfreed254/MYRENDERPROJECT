@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Assessment Attendance Sheet — {{ unit.code }}</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Arial', sans-serif; line-height:1.5; color:#222; }
+    @media print { .no-print { display:none !important; } @page { size:A4; margin:0.45in; } }
+    .container { max-width:8.5in; margin:0 auto; padding:24px; }
+
+    /* Header */
+    .header { text-align:center; border-bottom:3px solid #1e5a9f; padding-bottom:14px; margin-bottom:18px; }
+    .header img { height:64px; margin-bottom:8px; }
+    .header h1 { font-size:17px; color:#222; margin-bottom:3px; letter-spacing:0.3px; }
+    .header h2 { font-size:12px; color:#555; font-weight:400; margin-bottom:2px; }
+    .header h3 { font-size:14px; color:#1e5a9f; margin-top:6px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; }
+
+    /* Info grid */
+    .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; background:#f3f6fb; border-radius:6px; padding:12px 16px; margin-bottom:16px; font-size:12px; }
+    .info-grid div { line-height:2; }
+    .info-grid strong { display:inline-block; min-width:120px; color:#333; }
+
+    /* Notice banner */
+    .notice { background:#fff8e1; border-left:4px solid #f9a825; border-radius:4px; padding:10px 14px; margin-bottom:16px; font-size:12px; color:#5d4037; }
+    .notice strong { color:#e65100; }
+
+    /* Stats row */
+    .stats-row { display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
+    .stat-box { flex:1; min-width:100px; text-align:center; padding:10px; border-radius:6px; }
+    .stat-box .num { font-size:24px; font-weight:800; line-height:1; }
+    .stat-box .lbl { font-size:11px; font-weight:600; margin-top:3px; }
+    .box-eligible { background:#e8f5e9; color:#2e7d32; }
+    .box-min      { background:#e3f2fd; color:#1565c0; }
+    .box-gen      { background:#f3e5f5; color:#6a1b9a; }
+
+    /* Table */
+    table { width:100%; border-collapse:collapse; font-size:11.5px; }
+    thead tr { background:#1e5a9f; color:#fff; }
+    th { padding:9px 10px; text-align:left; font-weight:700; border:1px solid #1565c0; }
+    td { padding:9px 10px; border:1px solid #ddd; vertical-align:middle; }
+    tbody tr:nth-child(even) { background:#f7f9ff; }
+    .sig-cell { min-width:90px; }
+
+    /* Signature section */
+    .sig-section { margin-top:48px; padding-top:18px; border-top:1px solid #ccc; }
+    .sig-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:28px; margin-top:10px; }
+    .sig-box { text-align:center; }
+    .sig-line { border-bottom:1px solid #333; height:52px; margin-bottom:8px; }
+    .sig-label { font-weight:700; font-size:11px; text-transform:uppercase; }
+    .sig-sub { font-size:10px; color:#666; margin-top:2px; }
+
+    /* Print button */
+    .btn-row { margin-top:20px; text-align:right; }
+    .btn { padding:9px 20px; margin-left:8px; border:none; border-radius:6px; cursor:pointer; font-size:14px; font-weight:600; }
+    .btn-print { background:#1e5a9f; color:#fff; }
+    .btn-back  { background:#666; color:#fff; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <img src="{{ LOGO_URL }}" alt="Logo">
+    <h1>THIKA TECHNICAL TRAINING INSTITUTE</h1>
+    <h2>Department of {{ cls.dept_name }}</h2>
+    <h3>Assessment / Examination Attendance Sheet</h3>
+  </div>
+
+  <!-- Info -->
+  <div class="info-grid">
+    <div>
+      <div><strong>Class:</strong> {{ cls.name }}</div>
+      <div><strong>Unit Code:</strong> {{ unit.code }}</div>
+      <div><strong>Unit Name:</strong> {{ unit.name }}</div>
+    </div>
+    <div>
+      <div><strong>Term:</strong> {{ term_label }}</div>
+      <div><strong>Year:</strong> {{ year if year else '—' }}</div>
+      <div><strong>Date Generated:</strong> {{ date_gen }}</div>
+    </div>
+  </div>
+
+  <!-- Notice -->
+  <div class="notice">
+    <strong>&#9888; Notice:</strong>
+    Only trainees who have achieved a minimum of <strong>{{ min_pct }}%</strong> attendance
+    in <strong>{{ unit.code }} — {{ unit.name }}</strong> are listed below and are
+    <strong>eligible to sit for the assessment/examination</strong>.
+    Trainees not on this list do not meet the attendance requirement.
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-box box-eligible">
+      <div class="num">{{ eligible|length }}</div>
+      <div class="lbl">Eligible Trainees</div>
+    </div>
+    <div class="stat-box box-min">
+      <div class="num">{{ min_pct }}%</div>
+      <div class="lbl">Min. Attendance</div>
+    </div>
+    <div class="stat-box box-gen">
+      <div class="num">{{ term_label }}</div>
+      <div class="lbl">Term</div>
+    </div>
+  </div>
+
+  <!-- Eligible trainees table -->
+  {% if eligible %}
+  <table>
+    <thead>
+      <tr>
+        <th style="width:36px;">#</th>
+        <th style="width:110px;">Adm No.</th>
+        <th>Full Name</th>
+        <th style="width:60px;text-align:center;">Present</th>
+        <th style="width:55px;text-align:center;">Total</th>
+        <th style="width:60px;text-align:center;">Att. %</th>
+        <th class="sig-cell">Signature</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in eligible %}
+      <tr>
+        <td style="color:#aaa;font-size:11px;">{{ loop.index }}</td>
+        <td style="font-weight:700;">{{ s.admission_number }}</td>
+        <td>{{ s.full_name }}</td>
+        <td style="text-align:center;color:#2e7d32;font-weight:700;">{{ s.present }}</td>
+        <td style="text-align:center;color:#888;">{{ s.total }}</td>
+        <td style="text-align:center;font-weight:700;color:{% if s.pct >= 90 %}#27ae60{% else %}#2e7d32{% endif %};">
+          {{ s.pct }}%
+        </td>
+        <td class="sig-cell">&nbsp;</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="text-align:center;color:#999;padding:30px;font-size:13px;">
+    No trainees have achieved {{ min_pct }}% attendance in this unit.
+  </p>
+  {% endif %}
+
+  <!-- Signature section -->
+  <div class="sig-section">
+    <div class="sig-grid">
+      <div class="sig-box">
+        <div class="sig-line"></div>
+        <div class="sig-label">Lecturer / Trainer</div>
+        <div class="sig-sub">Name: _______________</div>
+        <div class="sig-sub">Signature &amp; Date</div>
+      </div>
+      <div class="sig-box">
+        <div class="sig-line"></div>
+        <div class="sig-label">Head of Department</div>
+        <div class="sig-sub">Name: _______________</div>
+        <div class="sig-sub">Signature &amp; Date</div>
+      </div>
+      <div class="sig-box">
+        <div class="sig-line"></div>
+        <div class="sig-label">Principal / Admin</div>
+        <div class="sig-sub">Name: _______________</div>
+        <div class="sig-sub">Signature &amp; Date</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Print button (hidden on print) -->
+  <div class="btn-row no-print">
+    <button class="btn btn-print" onclick="window.print()">&#128438; Print / Save PDF</button>
+    <button class="btn btn-back" onclick="history.back()">Back</button>
+  </div>
+
+</div>
+</body>
+</html>
