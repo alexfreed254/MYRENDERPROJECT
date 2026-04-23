@@ -3,62 +3,195 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>TTTTI Attendance Management System</title>
-  <link rel="stylesheet" href="/static/css/base.css">
+  <title>TTTTI — Unit Attendance Management System</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    body { background:linear-gradient(135deg,#1e5a9f 0%,#154070 100%); min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:'Segoe UI',sans-serif; }
-    .hero { text-align:center; color:#fff; margin-bottom:40px; }
-    .hero img { height:90px; border-radius:50%; border:3px solid rgba(255,255,255,.5); margin-bottom:16px; }
-    .hero h1 { font-size:22px; font-weight:700; margin-bottom:6px; }
-    .hero p  { font-size:14px; opacity:.8; }
-    .portal-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:20px; max-width:860px; width:100%; padding:0 20px; }
-    .portal-card { background:#fff; border-radius:16px; padding:32px 24px; text-align:center; text-decoration:none; color:#333; box-shadow:0 8px 32px rgba(0,0,0,.2); transition:transform .2s,box-shadow .2s; }
-    .portal-card:hover { transform:translateY(-4px); box-shadow:0 12px 40px rgba(0,0,0,.3); }
-    .portal-icon { width:64px; height:64px; border-radius:16px; display:flex; align-items:center; justify-content:center; font-size:28px; color:#fff; margin:0 auto 16px; }
-    .portal-card h3 { font-size:15px; font-weight:700; margin-bottom:6px; }
-    .portal-card p  { font-size:12px; color:#888; }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      background: #2176c7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    /* ── Main card ── */
+    .card {
+      background: #2d8ae0;
+      border-radius: 18px;
+      width: 100%;
+      max-width: 580px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      overflow: hidden;
+    }
+
+    /* ── Header section (blue) ── */
+    .card-header {
+      padding: 36px 40px 28px;
+      text-align: center;
+      color: #fff;
+    }
+
+    .logo-wrap {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 3px solid rgba(255,255,255,0.6);
+      overflow: hidden;
+      margin: 0 auto 18px;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .card-header h1 {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+
+    .card-header p {
+      font-size: 13px;
+      opacity: 0.85;
+      font-weight: 400;
+    }
+
+    /* ── Body section (white) ── */
+    .card-body {
+      background: #fff;
+      padding: 32px 40px 28px;
+    }
+
+    .card-body h2 {
+      text-align: center;
+      font-size: 17px;
+      font-weight: 700;
+      color: #1a6bbf;
+      margin-bottom: 24px;
+    }
+
+    /* ── Role buttons grid ── */
+    .role-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 8px;
+    }
+
+    .role-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 22px 12px;
+      border-radius: 12px;
+      text-decoration: none;
+      color: #fff;
+      font-weight: 700;
+      font-size: 15px;
+      transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+      cursor: pointer;
+      border: none;
+    }
+
+    .role-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+      filter: brightness(1.08);
+    }
+
+    .role-btn:active {
+      transform: translateY(0);
+    }
+
+    .role-btn i {
+      font-size: 28px;
+    }
+
+    .role-btn.admin   { background: #2d8ae0; }
+    .role-btn.trainer { background: #8b2fc9; }
+    .role-btn.trainee { background: #f5a623; }
+
+    /* ── Footer ── */
+    .card-footer {
+      background: #f5f5f5;
+      padding: 14px 40px;
+      text-align: center;
+      font-size: 12px;
+      color: #999;
+      border-top: 1px solid #eee;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 420px) {
+      .card-header { padding: 28px 24px 22px; }
+      .card-body   { padding: 24px 20px 20px; }
+      .card-header h1 { font-size: 16px; }
+      .role-grid { gap: 10px; }
+      .role-btn  { padding: 18px 8px; font-size: 13px; }
+      .role-btn i { font-size: 22px; }
+    }
   </style>
 </head>
 <body>
-  <div class="hero">
-    <img src="{{ LOGO_URL }}" alt="Logo">
-    <h1>THIKA TECHNICAL TRAINING INSTITUTE</h1>
-    <p>Attendance Management System — Select your portal to continue</p>
+
+  <div class="card">
+
+    <!-- Blue header -->
+    <div class="card-header">
+      <div class="logo-wrap">
+        <img src="{{ LOGO_URL }}" alt="TTTTI Logo">
+      </div>
+      <h1>Thika Technical Training Institute</h1>
+      <p>Unit Attendance Management System</p>
+    </div>
+
+    <!-- White body -->
+    <div class="card-body">
+      <h2>Choose Your Role</h2>
+
+      <div class="role-grid">
+
+        <!-- Admin -->
+        <a href="/auth/login?role=admin" class="role-btn admin">
+          <i class="fas fa-user-shield"></i>
+          <span>Admin</span>
+        </a>
+
+        <!-- Trainer -->
+        <a href="/auth/login?role=trainer" class="role-btn trainer">
+          <i class="fas fa-chalkboard-teacher"></i>
+          <span>Trainer</span>
+        </a>
+
+        <!-- Trainee -->
+        <a href="/auth/login?role=trainee" class="role-btn trainee">
+          <i class="fas fa-user-graduate"></i>
+          <span>Trainee</span>
+        </a>
+
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="card-footer">
+      &copy; 2025 Thika Technical Training Institute. All rights reserved.
+    </div>
+
   </div>
 
-  <div class="portal-grid">
-    <a href="/auth/login" class="portal-card">
-      <div class="portal-icon" style="background:linear-gradient(135deg,#7b1fa2,#4a148c)">
-        <i class="fas fa-shield-alt"></i>
-      </div>
-      <h3>Super Admin</h3>
-      <p>Full system control and monitoring</p>
-    </a>
-
-    <a href="/auth/login" class="portal-card">
-      <div class="portal-icon" style="background:linear-gradient(135deg,#1565c0,#0d47a1)">
-        <i class="fas fa-user-tie"></i>
-      </div>
-      <h3>Department Admin</h3>
-      <p>Manage your department</p>
-    </a>
-
-    <a href="/auth/login" class="portal-card">
-      <div class="portal-icon" style="background:linear-gradient(135deg,#1e5a9f,#154070)">
-        <i class="fas fa-chalkboard-teacher"></i>
-      </div>
-      <h3>Trainer / Lecturer</h3>
-      <p>Mark and manage attendance</p>
-    </a>
-
-    <a href="/auth/login" class="portal-card">
-      <div class="portal-icon" style="background:linear-gradient(135deg,#2e7d32,#1b5e20)">
-        <i class="fas fa-user-graduate"></i>
-      </div>
-      <h3>Student</h3>
-      <p>View your attendance records</p>
-    </a>
-  </div>
 </body>
 </html>
