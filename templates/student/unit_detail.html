@@ -29,7 +29,7 @@
 <nav class="navbar">
   <a href="/student/dashboard">← Back to Dashboard</a>
   <span>{{ student.full_name }}</span>
-  <a href="/student/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  <a href="/auth/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
 </nav>
 
 <div class="page">
@@ -74,10 +74,10 @@
             <td>Week {{ r.week }}</td>
             <td>{{ r.lesson }}</td>
             <td class="status-{{ r.status | lower }}">
-              {% if r.status == 'Present' %}✓ Present{% else %}✗ Absent{% endif %}
+              {% if r.status == 'present' %}✓ Present{% else %}✗ Absent{% endif %}
             </td>
             <td style="font-size:12px;color:#888;">
-              {% if r.attendance_date %}{{ r.attendance_date.strftime('%d %b %Y, %H:%M') }}{% else %}-{% endif %}
+              {% if r.attendance_date %}{{ r.attendance_date[:16] | replace('T', ' ') }}{% else %}—{% endif %}
             </td>
           </tr>
           {% endfor %}

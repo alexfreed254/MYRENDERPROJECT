@@ -20,7 +20,7 @@
   </div>
   <div class="topnav-right">
     <span><i class="fas fa-user-graduate"></i> {{ student.full_name }} &bull; {{ student.admission_number }}</span>
-    <a href="/student/logout" class="topnav-btn danger"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    <a href="/auth/logout" class="topnav-btn danger"><i class="fas fa-sign-out-alt"></i> Logout</a>
   </div>
 </nav>
 
@@ -88,7 +88,7 @@
           {% set total = row.total_records or 0 %}
           {% set pct = ((attended / total) * 100) | round(1) if total > 0 else 0 %}
           {% set sc = 'low' if pct < 75 else ('med' if pct < 90 else 'high') %}
-          <tr style="cursor:pointer;" onclick="window.location='/student/unit_detail?unit_id={{ row.id }}'">
+          <tr style="cursor:pointer;" onclick="window.location='/student/unit-detail?unit_id={{ row.id }}'">
             <td><span class="unit-badge">{{ row.unit_code }}</span></td>
             <td>{{ row.unit_name }}</td>
             <td style="text-align:center;font-weight:700;">{{ attended }}</td>
@@ -102,10 +102,10 @@
               </div>
             </td>
             <td style="font-size:12px;color:#888;white-space:nowrap;">
-              {% if row.last_update %}{{ row.last_update.strftime('%d %b, %H:%M') }}{% else %}—{% endif %}
+              {% if row.last_update %}{{ row.last_update[:16] | replace('T', ' ') }}{% else %}—{% endif %}
             </td>
             <td>
-              <a href="/student/unit_detail?unit_id={{ row.id }}" class="btn btn-sm btn-primary"
+              <a href="/student/unit-detail?unit_id={{ row.id }}" class="btn btn-sm btn-primary"
                  onclick="event.stopPropagation()">View</a>
             </td>
           </tr>
