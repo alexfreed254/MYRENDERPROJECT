@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Login — TTTTI Attendance System</title>
+  <title>Admin Login | TTTTI</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       min-height: 100vh;
-      background: #2176c7;
+      background: linear-gradient(160deg, #0d2b6b 0%, #1a4a9f 50%, #0d2b6b 100%);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -19,166 +19,51 @@
     }
 
     .card {
-      background: #2d8ae0;
-      border-radius: 18px;
+      background: linear-gradient(180deg, #1a3a7a 0%, #152f6a 100%);
+      border-radius: 20px;
       width: 100%;
-      max-width: 460px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-      overflow: hidden;
+      max-width: 420px;
+      padding: 40px 36px 32px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.08);
     }
 
-    /* ── Header ── */
-    .card-header {
-      padding: 30px 40px 24px;
-      text-align: center;
-      color: #fff;
-    }
-
+    /* ── Logo & title ── */
     .logo-wrap {
-      width: 70px;
-      height: 70px;
-      border-radius: 50%;
-      border: 3px solid rgba(255,255,255,0.6);
-      overflow: hidden;
-      margin: 0 auto 14px;
-      background: #fff;
+      text-align: center;
+      margin-bottom: 28px;
     }
 
     .logo-wrap img {
-      width: 100%;
-      height: 100%;
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      border: 3px solid rgba(255,255,255,0.3);
       object-fit: cover;
+      background: #fff;
     }
 
-    .card-header h1 {
-      font-size: 17px;
+    .logo-wrap h1 {
+      color: #fff;
+      font-size: 18px;
       font-weight: 800;
       text-transform: uppercase;
-      letter-spacing: 0.4px;
-      margin-bottom: 4px;
+      letter-spacing: 0.5px;
+      margin-top: 16px;
+      line-height: 1.3;
     }
 
-    .card-header p {
-      font-size: 12px;
-      opacity: 0.85;
-    }
-
-    /* Role badge in header */
-    .role-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      margin-top: 12px;
-      padding: 5px 16px;
-      border-radius: 20px;
-      font-size: 13px;
-      font-weight: 700;
-      color: #fff;
-    }
-    .role-badge.admin   { background: rgba(255,255,255,0.2); }
-    .role-badge.trainer { background: #8b2fc9; }
-    .role-badge.trainee { background: #f5a623; }
-
-    /* ── Body ── */
-    .card-body {
-      background: #fff;
-      padding: 30px 40px 24px;
-    }
-
-    .card-body h2 {
-      text-align: center;
-      font-size: 16px;
-      font-weight: 700;
-      color: #1a6bbf;
-      margin-bottom: 22px;
-    }
-
-    /* ── Form ── */
-    .form-group {
-      margin-bottom: 16px;
-    }
-
-    .form-group label {
-      display: block;
-      font-size: 12px;
-      font-weight: 600;
-      color: #555;
-      margin-bottom: 6px;
-    }
-
-    .input-wrap {
-      position: relative;
-    }
-
-    .input-wrap i {
-      position: absolute;
-      left: 13px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: #aaa;
+    .logo-wrap p {
+      color: rgba(255,255,255,0.65);
       font-size: 14px;
+      margin-top: 6px;
     }
 
-    .input-wrap input {
-      width: 100%;
-      padding: 11px 14px 11px 38px;
-      border: 1.5px solid #ddd;
-      border-radius: 8px;
-      font-size: 14px;
-      transition: border-color 0.2s, box-shadow 0.2s;
-      outline: none;
-    }
-
-    .input-wrap input:focus {
-      border-color: #2d8ae0;
-      box-shadow: 0 0 0 3px rgba(45,138,224,0.12);
-    }
-
-    .remember-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 20px;
-      font-size: 12px;
-      color: #666;
-    }
-
-    .remember-row label {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      cursor: pointer;
-    }
-
-    .remember-row a {
-      color: #2d8ae0;
-      text-decoration: none;
-    }
-
-    .remember-row a:hover { text-decoration: underline; }
-
-    /* ── Submit button ── */
-    .btn-login {
-      width: 100%;
-      padding: 13px;
-      border: none;
-      border-radius: 8px;
-      font-size: 15px;
-      font-weight: 700;
-      color: #fff;
-      cursor: pointer;
-      transition: filter 0.15s, transform 0.15s;
-    }
-
-    .btn-login:hover  { filter: brightness(1.08); transform: translateY(-1px); }
-    .btn-login:active { transform: translateY(0); }
-
-    .btn-login.admin   { background: #2d8ae0; }
-    .btn-login.trainer { background: #8b2fc9; }
-    .btn-login.trainee { background: #f5a623; }
-
-    /* ── Alerts ── */
-    .alert {
+    /* ── Error ── */
+    .error-box {
+      background: rgba(220,38,38,0.2);
+      border: 1px solid rgba(220,38,38,0.4);
+      color: #fca5a5;
       border-radius: 8px;
       padding: 10px 14px;
       font-size: 13px;
@@ -187,138 +72,151 @@
       align-items: center;
       gap: 8px;
     }
-    .alert-error   { background: #ffebee; color: #c62828; }
-    .alert-success { background: #e8f5e9; color: #2e7d32; }
 
-    /* ── Back link ── */
-    .back-link {
-      text-align: center;
-      margin-top: 16px;
+    /* ── Inputs ── */
+    .input-wrap {
+      position: relative;
+      margin-bottom: 14px;
+    }
+
+    .input-wrap i {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: rgba(255,255,255,0.4);
+      font-size: 15px;
+    }
+
+    .input-wrap input {
+      width: 100%;
+      padding: 15px 16px 15px 44px;
+      background: rgba(255,255,255,0.08);
+      border: 1.5px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      color: #fff;
+      font-size: 14px;
+      transition: border-color .2s, background .2s;
+      outline: none;
+    }
+
+    .input-wrap input::placeholder { color: rgba(255,255,255,0.4); }
+
+    .input-wrap input:focus {
+      border-color: rgba(255,255,255,0.35);
+      background: rgba(255,255,255,0.12);
+    }
+
+    /* ── Remember me ── */
+    .meta-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 22px;
       font-size: 13px;
     }
 
-    .back-link a {
-      color: #2d8ae0;
-      text-decoration: none;
-      font-weight: 600;
+    .meta-row label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: rgba(255,255,255,0.75);
+      cursor: pointer;
     }
 
-    .back-link a:hover { text-decoration: underline; }
+    .meta-row input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: #e53935;
+      cursor: pointer;
+    }
 
-    /* ── Footer ── */
-    .card-footer {
-      background: #f5f5f5;
-      padding: 12px 40px;
+    /* ── Login button ── */
+    .btn-login {
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(135deg, #e53935, #c62828);
+      color: #fff;
+      border: none;
+      border-radius: 50px;
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: filter .2s, transform .1s;
+      box-shadow: 0 4px 20px rgba(229,57,53,0.45);
+    }
+
+    .btn-login:hover  { filter: brightness(1.1); }
+    .btn-login:active { transform: scale(0.98); }
+
+    /* ── Footer links ── */
+    .footer-links {
       text-align: center;
-      font-size: 12px;
-      color: #999;
-      border-top: 1px solid #eee;
+      margin-top: 22px;
+      font-size: 13px;
     }
 
-    @media (max-width: 420px) {
-      .card-header, .card-body { padding-left: 24px; padding-right: 24px; }
+    .footer-links a {
+      color: rgba(255,255,255,0.7);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color .2s;
+    }
+
+    .footer-links a:hover { color: #fff; }
+
+    @media (max-width: 480px) {
+      .card { padding: 32px 22px 26px; }
+      .logo-wrap img { width: 76px; height: 76px; }
+      .logo-wrap h1 { font-size: 16px; }
     }
   </style>
 </head>
 <body>
 
-{% set role = request.args.get('role', 'admin') %}
-{% if role == 'trainer' %}
-  {% set role_label = 'Trainer' %}
-  {% set role_icon  = 'fas fa-chalkboard-teacher' %}
-  {% set role_sub   = 'Lecturer Portal' %}
-{% elif role == 'trainee' %}
-  {% set role_label = 'Trainee' %}
-  {% set role_icon  = 'fas fa-user-graduate' %}
-  {% set role_sub   = 'Student Portal' %}
-{% else %}
-  {% set role_label = 'Admin' %}
-  {% set role_icon  = 'fas fa-user-shield' %}
-  {% set role_sub   = 'Super Admin &amp; Department Admin' %}
-{% endif %}
-
 <div class="card">
 
-  <!-- Blue header -->
-  <div class="card-header">
-    <div class="logo-wrap">
-      <img src="{{ LOGO_URL }}" alt="TTTTI Logo">
-    </div>
+  <div class="logo-wrap">
+    <img src="{{ LOGO_URL }}" alt="TTTTI Logo">
     <h1>Thika Technical Training Institute</h1>
-    <p>Unit Attendance Management System</p>
-    <div class="role-badge {{ role }}">
-      <i class="{{ role_icon }}"></i> {{ role_label }} Login
-    </div>
-    <p style="font-size:11px;opacity:0.75;margin-top:6px;">{{ role_sub }}</p>
+    <p>Admin Login</p>
   </div>
 
-  <!-- White body -->
-  <div class="card-body">
-    <h2>Sign In to Your Account</h2>
-
-    {% if request.args.get('registered') %}
-    <div class="alert alert-success">
-      <i class="fas fa-check-circle"></i> Registration successful! You can now log in.
-    </div>
-    {% endif %}
-
-    {% if error %}
-    <div class="alert alert-error">
-      <i class="fas fa-exclamation-circle"></i> {{ error }}
-    </div>
-    {% endif %}
-
-    <form method="post" action="/auth/login">
-      <!-- Pass role through so backend can use it if needed -->
-      <input type="hidden" name="role" value="{{ role }}">
-
-      <div class="form-group">
-        <label for="email">Email Address</label>
-        <div class="input-wrap">
-          <i class="fas fa-envelope"></i>
-          <input type="email" id="email" name="email"
-                 placeholder="your@email.com"
-                 required autocomplete="email">
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label for="password">Password</label>
-        <div class="input-wrap">
-          <i class="fas fa-lock"></i>
-          <input type="password" id="password" name="password"
-                 placeholder="••••••••"
-                 required autocomplete="current-password">
-        </div>
-      </div>
-
-      <div class="remember-row">
-        <label>
-          <input type="checkbox" name="remember"> Remember me
-        </label>
-        <a href="/auth/forgot-password">Forgot password?</a>
-      </div>
-
-      <button type="submit" class="btn-login {{ role }}">
-        <i class="{{ role_icon }}"></i> &nbsp;
-        {% if role == 'admin' %}Sign In{% else %}Sign In as {{ role_label }}{% endif %}
-      </button>
-    </form>
-
-    {% if role == 'trainee' %}
-    <div class="back-link" style="margin-top:12px;">
-      New student? <a href="/student/register">Register here</a>
-    </div>
-    {% endif %}
-
-    <div class="back-link">
-      <a href="/"><i class="fas fa-arrow-left"></i> Back to role selection</a>
-    </div>
+  {% if error %}
+  <div class="error-box">
+    <i class="fas fa-exclamation-circle"></i> {{ error }}
   </div>
+  {% endif %}
 
-  <!-- Footer -->
-  <div class="card-footer">
-    &copy; 2025 Thika Technical Training Institute. All rights reserved.
+  <form method="post" action="/auth/login">
+
+    <div class="input-wrap">
+      <i class="fas fa-envelope"></i>
+      <input type="email" name="email"
+             placeholder="Email Address"
+             value="{{ request.form.get('email', '') }}"
+             required autocomplete="email">
+    </div>
+
+    <div class="input-wrap">
+      <i class="fas fa-lock"></i>
+      <input type="password" name="password"
+             placeholder="Password"
+             required autocomplete="current-password">
+    </div>
+
+    <div class="meta-row">
+      <label>
+        <input type="checkbox" name="remember"> Remember me
+      </label>
+    </div>
+
+    <button type="submit" class="btn-login">Login</button>
+  </form>
+
+  <div class="footer-links">
+    <a href="/"><i class="fas fa-arrow-left"></i> Back to Home</a>
   </div>
 
 </div>
