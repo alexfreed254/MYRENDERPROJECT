@@ -199,7 +199,7 @@ def submit_attendance():
         "week": week, "lesson": lesson, "year": year, "term": term,
         "count": len(records),
     })
-    return jsonify(success=True, message=f"Attendance saved for {len(records)} student(s).")
+    return jsonify(success=True, message=f"Attendance submitted successfully for {len(records)} student(s).")
 
 
 # ── View Attendance ───────────────────────────────────────────────────────────
