@@ -1,0 +1,108 @@
+{% extends "dept_admin/base.html" %}
+{% block title %}Attendance{% endblock %}
+{% block page_title %}View Attendance{% endblock %}
+{% block extra_style %}
+.page-wrap{padding:24px}
+.card{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);overflow:hidden}
+.filter-bar{padding:16px 20px;background:#fafafa;border-bottom:1px solid #eee;display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.filter-bar label{display:block;font-size:11px;font-weight:600;color:#555;margin-bottom:4px}
+.filter-bar select,.filter-bar input{padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px}
+.btn-filter{padding:8px 16px;background:#1565c0;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;align-self:flex-end}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#f5f5f5;padding:11px 14px;text-align:left;font-size:12px;color:#555;border-bottom:2px solid #eee}
+td{padding:10px 14px;border-bottom:1px solid #f5f5f5}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-present{background:#e8f5e9;color:#2e7d32}
+.badge-absent{background:#ffebee;color:#c62828}
+{% endblock %}
+{% block content %}
+<div class="page-wrap">
+  <div class="card">
+    <div class="filter-bar">
+      <form method="get" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;width:100%">
+        <div>
+          <label>Class</label>
+          <select name="class_id">
+            <option value="">All Classes</option>
+            {% for c in classes %}
+            <option value="{{ c.id }}" {% if class_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label>Unit</label>
+          <select name="unit_id">
+            <option value="">All Units</option>
+            {% for u in units %}
+            <option value="{{ u.id }}" {% if unit_id == u.id %}selected{% endif %}>{{ u.code }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label>Week</label>
+          <input type="number" name="week" value="{{ week or '' }}" placeholder="e.g. 1" style="width:80px">
+        </div>
+        <div>
+          <label>Year</label>
+          <select name="year">
+            {% for y in range(2024, 2030) %}
+            <option value="{{ y }}" {% if year == y %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label>Term</label>
+          <select name="term">
+            <option value="1" {% if term == 1 %}selected{% endif %}>Term 1</option>
+            <option value="2" {% if term == 2 %}selected{% endif %}>Term 2</option>
+            <option value="3" {% if term == 3 %}selected{% endif %}>Term 3</option>
+          </select>
+        </div>
+        <button type="submit" class="btn-filter"><i class="fas fa-filter"></i> Filter</button>
+      </form>
+    </div>
+
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Date</th>
+            <th>Student</th>
+            <th>Adm No.</th>
+            <th>Unit</th>
+            <th>Trainer</th>
+            <th>Week</th>
+            <th>Lesson</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in records %}
+          <tr>
+            <td style="color:#aaa">{{ loop.index }}</td>
+            <td style="white-space:nowrap;color:#888;font-size:12px">
+              {{ r.attendance_date[:10] if r.attendance_date else '—' }}
+            </td>
+            <td>{{ r.students.full_name if r.students else '—' }}</td>
+            <td style="font-size:12px">{{ r.students.admission_number if r.students else '—' }}</td>
+            <td><strong>{{ r.units.code if r.units else '—' }}</strong></td>
+            <td>{{ r.trainers.name if r.trainers else '—' }}</td>
+            <td style="text-align:center">{{ r.week }}</td>
+            <td style="text-align:center">{{ r.lesson }}</td>
+            <td><span class="badge badge-{{ r.status }}">{{ r.status.title() }}</span></td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="9" style="text-align:center;color:#aaa;padding:40px">
+              <i class="fas fa-clipboard-list" style="font-size:32px;display:block;margin-bottom:10px;opacity:0.3"></i>
+              No attendance records found.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
