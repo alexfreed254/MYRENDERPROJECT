@@ -1,0 +1,166 @@
+{% extends "dept_admin/base.html" %}
+{% block title %}Trainee Attendance Search{% endblock %}
+{% block page_title %}Trainee Attendance Search{% endblock %}
+
+{% block extra_style %}
+.page-wrap { padding:24px; }
+.card { background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.06); margin-bottom:24px; overflow:hidden; }
+.card-header { background:#1565c0; color:#fff; padding:14px 20px; font-size:14px; font-weight:600; }
+.card-body { padding:20px; }
+.search-row { display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; }
+.fg { flex:1; min-width:240px; }
+.fg label { display:block; font-size:12px; font-weight:600; color:#555; margin-bottom:5px; }
+.fg input, .fg select { width:100%; padding:9px 12px; border:1px solid #ddd; border-radius:6px; font-size:13px; }
+.btn { padding:9px 18px; border:none; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:6px; }
+.btn-primary { background:#1565c0; color:#fff; }
+.btn-pdf { background:#c62828; color:#fff; }
+.result-item { background:#e3f2fd; border-radius:8px; padding:12px 18px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; border:2px solid transparent; cursor:pointer; transition:border-color .15s; text-decoration:none; color:inherit; }
+.result-item.selected, .result-item:hover { border-color:#1565c0; }
+.stat-box { flex:1; min-width:80px; text-align:center; padding:14px; border-radius:8px; }
+table { width:100%; border-collapse:collapse; }
+th { background:#f5f5f5; padding:11px 14px; text-align:left; font-size:12px; color:#555; border-bottom:2px solid #eee; }
+td { padding:10px 14px; border-bottom:1px solid #f0f0f0; font-size:13px; }
+{% endblock %}
+
+{% block content %}
+<div class="page-wrap">
+
+  <!-- Step 1: Search -->
+  <div class="card">
+    <div class="card-header"><i class="fas fa-user-graduate"></i> Step 1 — Search by Admission Number or Name</div>
+    <div class="card-body">
+      <form method="get" action="/dept-admin/trainee-search" class="search-row">
+        {% if unit_id %}<input type="hidden" name="unit_id" value="{{ unit_id }}">{% endif %}
+        <div class="fg">
+          <label>Admission Number or Name</label>
+          <input type="text" name="q" value="{{ query }}" placeholder="e.g. E001 or John" autofocus>
+        </div>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
+        {% if query %}
+          <a href="/dept-admin/trainee-search" class="btn" style="background:#666;color:#fff;"><i class="fas fa-times"></i> Clear</a>
+        {% endif %}
+      </form>
+
+      {% if query and not students %}
+        <p style="margin-top:14px;color:#888;">No trainees found matching "<strong>{{ query }}</strong>".</p>
+      {% endif %}
+
+      {% if students %}
+      <div style="margin-top:18px;">
+        <p style="font-size:13px;color:#666;margin-bottom:10px;">{{ students|length }} result(s) — click a trainee to view their attendance:</p>
+        {% for s in students %}
+        <a href="/dept-admin/trainee-search?q={{ query }}&student_id={{ s.id }}&unit_id={{ unit_id }}"
+           class="result-item {{ 'selected' if student_id == s.id }}">
+          <div>
+            <strong style="font-size:15px;">{{ s.full_name }}</strong>
+            <span style="margin-left:12px;color:#555;font-size:13px;">{{ s.admission_number }}</span>
+            <span style="margin-left:12px;color:#888;font-size:12px;">{{ s.classes.name if s.classes else '—' }}</span>
+          </div>
+          <i class="fas fa-chevron-right" style="color:#1565c0;"></i>
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Step 2: Select Unit -->
+  {% if student_id %}
+  <div class="card">
+    <div class="card-header"><i class="fas fa-book"></i> Step 2 — Select Unit</div>
+    <div class="card-body">
+      <form method="get" action="/dept-admin/trainee-search" class="search-row">
+        <input type="hidden" name="q" value="{{ query }}">
+        <input type="hidden" name="student_id" value="{{ student_id }}">
+        <div class="fg">
+          <label>Unit</label>
+          <select name="unit_id" required>
+            <option value="">-- Select Unit --</option>
+            {% for u in units_list %}
+              <option value="{{ u.id }}" {% if unit_id == u.id %}selected{% endif %}>{{ u.code }} — {{ u.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-eye"></i> View</button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Step 3: Results -->
+  {% if student and summary %}
+  <div class="card">
+    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+      <span><i class="fas fa-clipboard-list"></i> {{ student.full_name }} — {{ summary.unit_code }} {{ summary.unit_name }}</span>
+      <a href="/dept-admin/trainee-report-pdf?student_id={{ student_id }}&unit_id={{ unit_id }}"
+         target="_blank" class="btn btn-pdf" style="padding:6px 14px;font-size:12px;">
+        <i class="fas fa-file-pdf"></i> Download PDF
+      </a>
+    </div>
+    <div class="card-body">
+      <!-- Student info -->
+      <div style="background:#f5f8ff;border-radius:8px;padding:12px 16px;margin-bottom:18px;font-size:13px;display:flex;gap:24px;flex-wrap:wrap;">
+        <div><strong>Adm No:</strong> {{ student.admission_number }}</div>
+        <div><strong>Class:</strong> {{ student.classes.name if student.classes else '—' }}</div>
+      </div>
+
+      <!-- Stats -->
+      <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:18px;">
+        <div class="stat-box" style="background:#e8f5e9;color:#2e7d32;">
+          <div style="font-size:28px;font-weight:800;line-height:1;">{{ summary.present }}</div>
+          <div style="font-size:12px;font-weight:600;margin-top:4px;">Present</div>
+        </div>
+        <div class="stat-box" style="background:#ffebee;color:#c62828;">
+          <div style="font-size:28px;font-weight:800;line-height:1;">{{ summary.absent }}</div>
+          <div style="font-size:12px;font-weight:600;margin-top:4px;">Absent</div>
+        </div>
+        <div class="stat-box" style="background:#e3f2fd;color:#1565c0;">
+          <div style="font-size:28px;font-weight:800;line-height:1;">{{ summary.total }}</div>
+          <div style="font-size:12px;font-weight:600;margin-top:4px;">Total</div>
+        </div>
+        <div class="stat-box" style="background:#fff3e0;color:#e65100;">
+          <div style="font-size:28px;font-weight:800;line-height:1;">{{ summary.pct }}%</div>
+          <div style="font-size:12px;font-weight:600;margin-top:4px;">Attendance</div>
+        </div>
+        <div style="flex:3;min-width:160px;display:flex;align-items:center;gap:10px;">
+          <div style="flex:1;height:12px;background:#eee;border-radius:6px;overflow:hidden;">
+            <div style="height:100%;border-radius:6px;width:{{ summary.pct }}%;
+              background:{% if summary.pct >= 75 %}#27ae60{% elif summary.pct >= 50 %}#f39c12{% else %}#e74c3c{% endif %};"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Records table -->
+      {% if records %}
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr><th>#</th><th>Week</th><th>Lesson</th><th>Status</th><th>Trainer</th><th>Date</th></tr>
+          </thead>
+          <tbody>
+            {% for r in records %}
+            <tr>
+              <td style="color:#aaa">{{ loop.index }}</td>
+              <td>Week {{ r.week }}</td>
+              <td>{{ r.lesson }}</td>
+              <td style="font-weight:700;color:{% if r.status == 'present' %}#2e7d32{% else %}#c62828{% endif %};">
+                {% if r.status == 'present' %}✓ Present{% else %}✗ Absent{% endif %}
+              </td>
+              <td style="font-size:12px;">{{ r.trainers.name if r.trainers else '—' }}</td>
+              <td style="font-size:12px;color:#888;white-space:nowrap;">
+                {{ r.attendance_date[:16].replace('T',' ') if r.attendance_date else '—' }}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p style="text-align:center;color:#aaa;padding:24px;">No attendance records found for this trainee in this unit.</p>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

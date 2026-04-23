@@ -1,0 +1,88 @@
+{% extends "dept_admin/base.html" %}
+{% block title %}Class List{% endblock %}
+{% block page_title %}Class List{% endblock %}
+
+{% block extra_style %}
+.page-wrap { padding:24px; }
+.card { background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.06); margin-bottom:24px; overflow:hidden; }
+.card-header { background:#1565c0; color:#fff; padding:14px 20px; font-size:14px; font-weight:600; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+.card-body { padding:20px; }
+.filter-row { display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; }
+.fg { flex:1; min-width:180px; }
+.fg label { display:block; font-size:12px; font-weight:600; color:#555; margin-bottom:5px; }
+.fg select { width:100%; padding:9px 12px; border:1px solid #ddd; border-radius:6px; font-size:13px; }
+.btn { padding:9px 18px; border:none; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:6px; }
+.btn-primary { background:#1565c0; color:#fff; }
+.btn-pdf { background:#c62828; color:#fff; }
+table { width:100%; border-collapse:collapse; }
+th { background:#f5f5f5; padding:11px 14px; text-align:left; font-size:12px; color:#555; border-bottom:2px solid #eee; }
+td { padding:11px 14px; border-bottom:1px solid #f0f0f0; font-size:13px; }
+.empty-state { text-align:center; padding:48px; color:#aaa; }
+.empty-state i { font-size:40px; display:block; margin-bottom:14px; opacity:.3; }
+{% endblock %}
+
+{% block content %}
+<div class="page-wrap">
+
+  <div class="card">
+    <div class="card-header"><i class="fas fa-filter"></i> Filter</div>
+    <div class="card-body">
+      <form method="get" action="/dept-admin/class-list" class="filter-row">
+        <div class="fg">
+          <label>Class</label>
+          <select name="class_id" onchange="this.form.submit()">
+            <option value="">-- Select Class --</option>
+            {% for c in classes %}
+              <option value="{{ c.id }}" {% if class_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-eye"></i> View</button>
+      </form>
+    </div>
+  </div>
+
+  {% if class_id and cls %}
+  <div class="card">
+    <div class="card-header">
+      <span><i class="fas fa-users"></i> {{ cls.name }} — {{ students|length }} student(s)</span>
+      <a href="/dept-admin/class-list-pdf?class_id={{ class_id }}" target="_blank" class="btn btn-pdf" style="padding:6px 14px;font-size:12px;">
+        <i class="fas fa-file-pdf"></i> Download PDF
+      </a>
+    </div>
+    {% if students %}
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr><th style="width:50px;">#</th><th>Admission No</th><th>Student Name</th></tr>
+        </thead>
+        <tbody>
+          {% for s in students %}
+          <tr>
+            <td style="color:#aaa">{{ loop.index }}</td>
+            <td><strong style="font-family:monospace;color:#1565c0;">{{ s.admission_number }}</strong></td>
+            <td>{{ s.full_name }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <i class="fas fa-users"></i>
+      No students found in this class.
+    </div>
+    {% endif %}
+  </div>
+
+  {% elif not class_id %}
+  <div class="card">
+    <div class="empty-state">
+      <i class="fas fa-arrow-up"></i>
+      Select a department and class above to view the class list for downloading class list per class with signature column.
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

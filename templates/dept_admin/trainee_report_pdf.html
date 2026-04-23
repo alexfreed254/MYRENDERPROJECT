@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Trainee Attendance Report — {{ student.full_name }}</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:Arial, sans-serif; font-size:12px; color:#111; background:#fff; padding:30px 40px; }
+    .header { text-align:center; margin-bottom:10px; }
+    .header img { height:70px; margin-bottom:8px; }
+    .header h1 { font-size:17px; font-weight:900; text-transform:uppercase; letter-spacing:1px; color:#000; margin-bottom:4px; }
+    .header h2 { font-size:13px; font-weight:700; color:#333; margin-bottom:4px; }
+    .header h3 { font-size:13px; font-weight:700; color:#1565c0; text-decoration:underline; text-transform:uppercase; }
+    .divider { border:none; border-top:2px solid #111; margin:12px 0 18px; }
+    .info-box { background:#f0f0f0; border-radius:4px; padding:14px 18px; margin-bottom:20px; display:flex; gap:0; }
+    .info-col { flex:1; }
+    .info-col p { margin-bottom:5px; font-size:12px; line-height:1.6; }
+    .info-col p strong { font-weight:700; }
+    .unit-title { background:#1565c0; color:#fff; padding:7px 12px; font-size:12px; font-weight:700; margin-bottom:0; border-radius:3px 3px 0 0; }
+    .unit-summary { background:#e3f2fd; padding:6px 12px; font-size:11px; margin-bottom:8px; display:flex; gap:24px; border-radius:0 0 3px 3px; }
+    .unit-summary span { font-weight:600; }
+    table { width:100%; border-collapse:collapse; margin-bottom:24px; }
+    thead th { background:#1565c0; color:#fff; padding:8px 10px; font-size:11px; text-align:left; border:1px solid #0d47a1; }
+    tbody td { padding:7px 10px; border:1px solid #ccc; font-size:11px; }
+    tbody tr:nth-child(even) td { background:#f7f7f7; }
+    .present { color:#1a7a1a; font-weight:700; }
+    .absent  { color:#c00; font-weight:700; }
+    .sig-section { margin-top:40px; display:flex; justify-content:space-between; gap:20px; }
+    .sig-block { flex:1; text-align:center; }
+    .sig-line { border-top:1.5px solid #333; margin-bottom:8px; }
+    .sig-role { font-weight:700; font-size:12px; text-transform:uppercase; margin-bottom:4px; }
+    .sig-name { font-size:11px; color:#333; margin-bottom:2px; }
+    .sig-label { font-size:11px; color:#555; }
+    .footer { text-align:center; margin-top:24px; font-size:10px; color:#888; border-top:1px solid #ddd; padding-top:8px; }
+    .no-print { text-align:center; margin-top:24px; }
+    @media print { .no-print { display:none; } body { padding:15px 20px; } }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <img src="{{ LOGO_URL }}" alt="Logo">
+  <h1>Thika Technical Training Institute</h1>
+  <h2>Department of {{ dept_name }}</h2>
+  <h3>Trainee Attendance Report</h3>
+</div>
+<hr class="divider">
+
+<div class="info-box">
+  <div class="info-col">
+    <p><strong>STUDENT:</strong> {{ student.full_name }}</p>
+    <p><strong>ADM NO:</strong> {{ student.admission_number }}</p>
+    <p><strong>CLASS:</strong> {{ student.classes.name if student.classes else '—' }}</p>
+  </div>
+  <div class="info-col">
+    <p><strong>UNIT:</strong> {{ summary.unit_code }} — {{ summary.unit_name }}</p>
+    <p><strong>DEPARTMENT:</strong> {{ dept_name }}</p>
+    <p><strong>DATE GENERATED:</strong> {{ generated }}</p>
+  </div>
+</div>
+
+<!-- Unit summary -->
+<div style="margin-bottom:24px;">
+  <div class="unit-title">{{ summary.unit_code }} — {{ summary.unit_name }}</div>
+  <div class="unit-summary">
+    <span style="color:#1a7a1a;">✓ Present: {{ summary.present }}</span>
+    <span style="color:#c00;">✗ Absent: {{ summary.absent }}</span>
+    <span>Total: {{ summary.total }}</span>
+    <span style="color:{% if summary.pct >= 75 %}#1a7a1a{% elif summary.pct >= 50 %}#e07000{% else %}#c00{% endif %};">
+      Attendance: {{ summary.pct }}%
+    </span>
+  </div>
+  <table>
+    <thead>
+      <tr><th>#</th><th>Week</th><th>Lesson</th><th>Year</th><th>Term</th><th>Status</th><th>Trainer</th><th>Date</th></tr>
+    </thead>
+    <tbody>
+      {% for r in records %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>Week {{ r.week }}</td>
+        <td>{{ r.lesson }}</td>
+        <td>{{ r.year }}</td>
+        <td>Term {{ r.term }}</td>
+        <td class="{{ r.status }}">{{ '✓ Present' if r.status == 'present' else '✗ Absent' }}</td>
+        <td>{{ r.trainers.name if r.trainers else '—' }}</td>
+        <td>{{ r.attendance_date[:10] if r.attendance_date else '—' }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8" style="text-align:center;color:#aaa;padding:16px;">No records found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="sig-section">
+  <div class="sig-block">
+    <div class="sig-line"></div>
+    <div class="sig-role">Dept. Admin</div>
+    <div class="sig-name">Name: _______________</div>
+    <div class="sig-label">Signature &amp; Date</div>
+  </div>
+  <div class="sig-block">
+    <div class="sig-line"></div>
+    <div class="sig-role">Head of Department</div>
+    <div class="sig-name">Name: _______________</div>
+    <div class="sig-label">Signature &amp; Date</div>
+  </div>
+</div>
+
+<div class="footer">&copy; {{ generated[:4] }} Thika Technical Training Institute — Confidential</div>
+
+<div class="no-print">
+  <button onclick="window.print()"
+    style="padding:10px 32px;background:#1565c0;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer;font-weight:600;">
+    Print / Save as PDF
+  </button>
+</div>
+
+</body>
+</html>

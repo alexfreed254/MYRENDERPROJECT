@@ -405,6 +405,448 @@ def view_attendance():
                            week=week, year=year, term=term)
 
 
+# ── Credentials ──────────────────────────────────────────────────────────────
+
+@dept_admin_bp.route("/credentials", methods=["GET", "POST"])
+@dept_admin_required
+def credentials():
+    db      = get_service_client()
+    dept_id = _dept_id()
+    tab     = request.args.get("tab", "trainers")
+    msg     = None
+
+    # ── POST: update trainer username/password ────────────────────────────────
+    if request.method == "POST":
+        action = request.form.get("action", "")
+
+        if action == "update_trainer":
+            trainer_id = request.form.get("trainer_id", type=int)
+            new_username = request.form.get("username", "").strip()
+            new_password = request.form.get("password", "").strip()
+
+            # Verify trainer belongs to this dept
+            row = db.table("trainers").select("user_id, department_id").eq("id", trainer_id).single().execute().data
+            if not row or row["department_id"] != dept_id:
+                abort(403)
+
+            try:
+                if new_username:
+                    db.table("trainers").update({"username": new_username}).eq("id", trainer_id).execute()
+                if new_password and len(new_password) >= 6:
+                    db.auth.admin.update_user_by_id(row["user_id"], {"password": new_password})
+                write_audit_log("update_trainer_credentials", target=str(trainer_id))
+                msg = "Credentials updated successfully."
+            except Exception as exc:
+                msg = f"Update failed: {exc}"
+            tab = "trainers"
+
+        elif action == "update_student":
+            student_id   = request.form.get("student_id", type=int)
+            new_password = request.form.get("password", "").strip()
+
+            dept_class_ids = [
+                c["id"] for c in
+                db.table("classes").select("id").eq("department_id", dept_id).execute().data or []
+            ]
+            row = db.table("students").select("user_id, class_id").eq("id", student_id).single().execute().data
+            if not row or row["class_id"] not in dept_class_ids:
+                abort(403)
+
+            try:
+                if row["user_id"] and new_password:
+                    db.auth.admin.update_user_by_id(row["user_id"], {"password": new_password})
+                    write_audit_log("update_student_password", target=str(student_id))
+                    msg = "Password updated successfully."
+                else:
+                    msg = "Student has no linked auth account yet."
+            except Exception as exc:
+                msg = f"Update failed: {exc}"
+            tab = "students"
+
+        elif action == "reset_student":
+            student_id = request.form.get("student_id", type=int)
+            dept_class_ids = [
+                c["id"] for c in
+                db.table("classes").select("id").eq("department_id", dept_id).execute().data or []
+            ]
+            row = db.table("students").select("user_id, class_id").eq("id", student_id).single().execute().data
+            if not row or row["class_id"] not in dept_class_ids:
+                abort(403)
+            try:
+                if row["user_id"]:
+                    db.auth.admin.update_user_by_id(row["user_id"], {"password": "123456"})
+                    write_audit_log("reset_student_password", target=str(student_id))
+                    msg = "Password reset to 123456."
+                else:
+                    msg = "Student has no linked auth account yet."
+            except Exception as exc:
+                msg = f"Reset failed: {exc}"
+            tab = "students"
+
+    # ── GET data ──────────────────────────────────────────────────────────────
+    search_t = request.args.get("search_t", "").strip()
+    search_s = request.args.get("search_s", "").strip()
+    filter_class = request.args.get("filter_class", type=int)
+
+    trainers_list = []
+    students_list = []
+    classes_list  = []
+
+    if tab == "trainers":
+        query = db.table("trainers").select("*, departments(name)").eq("department_id", dept_id).order("name")
+        if search_t:
+            query = query.or_(f"name.ilike.%{search_t}%,username.ilike.%{search_t}%")
+        trainers_list = query.execute().data or []
+    else:
+        dept_class_ids = [
+            c["id"] for c in
+            db.table("classes").select("id").eq("department_id", dept_id).execute().data or []
+        ]
+        classes_list = db.table("classes").select("*").eq("department_id", dept_id).order("name").execute().data or []
+        query = (db.table("students")
+                   .select("*, classes(name)")
+                   .in_("class_id", dept_class_ids or [-1])
+                   .order("full_name"))
+        if search_s:
+            query = query.or_(f"full_name.ilike.%{search_s}%,admission_number.ilike.%{search_s}%")
+        if filter_class:
+            query = query.eq("class_id", filter_class)
+        students_list = query.execute().data or []
+
+    return render_template("dept_admin/credentials.html",
+                           tab=tab, msg=msg,
+                           trainers_list=trainers_list,
+                           students_list=students_list,
+                           classes_list=classes_list,
+                           search_t=search_t,
+                           search_s=search_s,
+                           filter_class=filter_class)
+
+
+# ── Class List ────────────────────────────────────────────────────────────────
+
+@dept_admin_bp.route("/class-list")
+@dept_admin_required
+def class_list():
+    db      = get_service_client()
+    dept_id = _dept_id()
+    class_id = request.args.get("class_id", type=int)
+
+    classes = (db.table("classes").select("*").eq("department_id", dept_id).order("name").execute().data or [])
+
+    cls      = None
+    students = []
+    if class_id:
+        cls_rows = [c for c in classes if c["id"] == class_id]
+        if not cls_rows:
+            abort(403)
+        cls = cls_rows[0]
+        students = (db.table("students")
+                      .select("*")
+                      .eq("class_id", class_id)
+                      .order("admission_number")
+                      .execute().data or [])
+
+    return render_template("dept_admin/class_list.html",
+                           classes=classes, class_id=class_id,
+                           cls=cls, students=students)
+
+
+@dept_admin_bp.route("/class-list-pdf")
+@dept_admin_required
+def class_list_pdf():
+    db      = get_service_client()
+    dept_id = _dept_id()
+    class_id = request.args.get("class_id", type=int)
+    if not class_id:
+        abort(400)
+
+    cls_row = db.table("classes").select("*").eq("id", class_id).eq("department_id", dept_id).limit(1).execute().data
+    if not cls_row:
+        abort(403)
+    cls = cls_row[0]
+
+    dept = db.table("departments").select("name").eq("id", dept_id).single().execute().data or {}
+    students = (db.table("students").select("*").eq("class_id", class_id).order("admission_number").execute().data or [])
+
+    from utils import now_eat
+    return render_template("dept_admin/class_list_pdf.html",
+                           cls=cls,
+                           dept_name=dept.get("name", ""),
+                           students=students,
+                           date_gen=now_eat().strftime("%d %b %Y"))
+
+
+# ── Trainee Attendance Search ─────────────────────────────────────────────────
+
+@dept_admin_bp.route("/trainee-search")
+@dept_admin_required
+def trainee_search():
+    db      = get_service_client()
+    dept_id = _dept_id()
+
+    query      = request.args.get("q", "").strip()
+    student_id = request.args.get("student_id", type=int)
+    unit_id    = request.args.get("unit_id", type=int)
+
+    dept_class_ids = [
+        c["id"] for c in
+        db.table("classes").select("id").eq("department_id", dept_id).execute().data or []
+    ]
+
+    students   = []
+    units_list = []
+    student    = None
+    summary    = None
+    records    = []
+
+    if query:
+        q_rows = (db.table("students")
+                    .select("*, classes(name)")
+                    .in_("class_id", dept_class_ids or [-1])
+                    .or_(f"full_name.ilike.%{query}%,admission_number.ilike.%{query}%")
+                    .execute().data or [])
+        students = q_rows
+
+    if student_id:
+        s_rows = (db.table("students")
+                    .select("*, classes(name)")
+                    .eq("id", student_id)
+                    .in_("class_id", dept_class_ids or [-1])
+                    .limit(1)
+                    .execute().data or [])
+        if not s_rows:
+            abort(403)
+        student = s_rows[0]
+
+        # Units this student has attendance in (within this dept)
+        units_list = (db.table("units").select("*").eq("department_id", dept_id).order("code").execute().data or [])
+
+        if unit_id:
+            records = (db.table("attendance")
+                         .select("*, trainers(name)")
+                         .eq("student_id", student_id)
+                         .eq("unit_id", unit_id)
+                         .order("week").order("lesson")
+                         .execute().data or [])
+
+            present = sum(1 for r in records if r["status"] == "present")
+            total   = len(records)
+            unit_row = next((u for u in units_list if u["id"] == unit_id), {})
+            summary = {
+                "unit_code": unit_row.get("code", "—"),
+                "unit_name": unit_row.get("name", "—"),
+                "present":   present,
+                "absent":    total - present,
+                "total":     total,
+                "pct":       round((present / total) * 100, 1) if total else 0,
+            }
+
+    return render_template("dept_admin/trainee_search.html",
+                           query=query,
+                           students=students,
+                           student_id=student_id,
+                           student=student,
+                           units_list=units_list,
+                           unit_id=unit_id,
+                           summary=summary,
+                           records=records)
+
+
+@dept_admin_bp.route("/trainee-report-pdf")
+@dept_admin_required
+def trainee_report_pdf():
+    db      = get_service_client()
+    dept_id = _dept_id()
+    student_id = request.args.get("student_id", type=int)
+    unit_id    = request.args.get("unit_id", type=int)
+    if not student_id or not unit_id:
+        abort(400)
+
+    dept_class_ids = [
+        c["id"] for c in
+        db.table("classes").select("id").eq("department_id", dept_id).execute().data or []
+    ]
+    s_rows = (db.table("students").select("*, classes(name)").eq("id", student_id)
+                .in_("class_id", dept_class_ids or [-1]).limit(1).execute().data or [])
+    if not s_rows:
+        abort(403)
+    student = s_rows[0]
+
+    records = (db.table("attendance")
+                 .select("*, trainers(name)")
+                 .eq("student_id", student_id)
+                 .eq("unit_id", unit_id)
+                 .order("week").order("lesson")
+                 .execute().data or [])
+
+    unit_row = db.table("units").select("*").eq("id", unit_id).limit(1).execute().data or [{}]
+    unit = unit_row[0]
+    dept = db.table("departments").select("name").eq("id", dept_id).single().execute().data or {}
+
+    present = sum(1 for r in records if r["status"] == "present")
+    total   = len(records)
+    summary = {
+        "unit_code": unit.get("code", "—"),
+        "unit_name": unit.get("name", "—"),
+        "present":   present,
+        "absent":    total - present,
+        "total":     total,
+        "pct":       round((present / total) * 100, 1) if total else 0,
+    }
+
+    from utils import now_eat
+    return render_template("dept_admin/trainee_report_pdf.html",
+                           student=student,
+                           unit=unit,
+                           dept_name=dept.get("name", ""),
+                           summary=summary,
+                           records=records,
+                           generated=now_eat().strftime("%d %b %Y %H:%M"))
+
+
+# ── Assessment Attendance Sheet ───────────────────────────────────────────────
+
+@dept_admin_bp.route("/assessment-sheet")
+@dept_admin_required
+def assessment_sheet():
+    db      = get_service_client()
+    dept_id = _dept_id()
+
+    class_id = request.args.get("class_id", type=int)
+    unit_id  = request.args.get("unit_id",  type=int)
+    year     = request.args.get("year",     type=int)
+    term     = request.args.get("term",     type=int)
+    min_pct  = request.args.get("min_pct",  75, type=int)
+
+    classes = (db.table("classes").select("*").eq("department_id", dept_id).order("name").execute().data or [])
+    units   = (db.table("units").select("*").eq("department_id", dept_id).order("code").execute().data or [])
+
+    cls      = None
+    unit     = None
+    eligible = []
+    term_labels = {1: "Term 1 (Jan–Apr)", 2: "Term 2 (May–Aug)", 3: "Term 3 (Sep–Dec)"}
+    term_label  = term_labels.get(term, "All Terms") if term else "All Terms"
+
+    if class_id and unit_id:
+        cls_rows = [c for c in classes if c["id"] == class_id]
+        if not cls_rows:
+            abort(403)
+        cls = cls_rows[0]
+        unit_rows = [u for u in units if u["id"] == unit_id]
+        unit = unit_rows[0] if unit_rows else {}
+
+        query = (db.table("attendance")
+                   .select("student_id, status, students(id, full_name, admission_number)")
+                   .eq("unit_id", unit_id)
+                   .eq("class_id" if False else "unit_id", unit_id))
+
+        # Build attendance query scoped to this class
+        att_query = (db.table("attendance")
+                       .select("student_id, status")
+                       .eq("unit_id", unit_id))
+        if year: att_query = att_query.eq("year", year)
+        if term: att_query = att_query.eq("term", term)
+        att_records = att_query.execute().data or []
+
+        # Get students in this class
+        class_students = (db.table("students")
+                            .select("id, full_name, admission_number")
+                            .eq("class_id", class_id)
+                            .order("admission_number")
+                            .execute().data or [])
+
+        student_map = {s["id"]: {"full_name": s["full_name"], "admission_number": s["admission_number"],
+                                  "present": 0, "total": 0} for s in class_students}
+
+        for r in att_records:
+            sid = r["student_id"]
+            if sid in student_map:
+                student_map[sid]["total"] += 1
+                if r["status"] == "present":
+                    student_map[sid]["present"] += 1
+
+        for s in student_map.values():
+            s["pct"] = round((s["present"] / s["total"]) * 100, 1) if s["total"] else 0
+
+        eligible = sorted(
+            [s for s in student_map.values() if s["pct"] >= min_pct],
+            key=lambda x: x["admission_number"]
+        )
+
+    return render_template("dept_admin/assessment_sheet.html",
+                           classes=classes, units=units,
+                           class_id=class_id, unit_id=unit_id,
+                           year=year, term=term, min_pct=min_pct,
+                           cls=cls, unit=unit,
+                           eligible=eligible,
+                           term_label=term_label)
+
+
+@dept_admin_bp.route("/assessment-sheet-pdf")
+@dept_admin_required
+def assessment_sheet_pdf():
+    db      = get_service_client()
+    dept_id = _dept_id()
+
+    class_id = request.args.get("class_id", type=int)
+    unit_id  = request.args.get("unit_id",  type=int)
+    year     = request.args.get("year",     type=int)
+    term     = request.args.get("term",     type=int)
+    min_pct  = request.args.get("min_pct",  75, type=int)
+
+    if not class_id or not unit_id:
+        abort(400)
+
+    cls_row = db.table("classes").select("*").eq("id", class_id).eq("department_id", dept_id).limit(1).execute().data
+    if not cls_row:
+        abort(403)
+    cls = cls_row[0]
+
+    unit_row = db.table("units").select("*").eq("id", unit_id).limit(1).execute().data or [{}]
+    unit = unit_row[0]
+    dept = db.table("departments").select("name").eq("id", dept_id).single().execute().data or {}
+
+    att_query = db.table("attendance").select("student_id, status").eq("unit_id", unit_id)
+    if year: att_query = att_query.eq("year", year)
+    if term: att_query = att_query.eq("term", term)
+    att_records = att_query.execute().data or []
+
+    class_students = (db.table("students")
+                        .select("id, full_name, admission_number")
+                        .eq("class_id", class_id)
+                        .order("admission_number")
+                        .execute().data or [])
+
+    student_map = {s["id"]: {"full_name": s["full_name"], "admission_number": s["admission_number"],
+                              "present": 0, "total": 0} for s in class_students}
+    for r in att_records:
+        sid = r["student_id"]
+        if sid in student_map:
+            student_map[sid]["total"] += 1
+            if r["status"] == "present":
+                student_map[sid]["present"] += 1
+    for s in student_map.values():
+        s["pct"] = round((s["present"] / s["total"]) * 100, 1) if s["total"] else 0
+
+    eligible = sorted(
+        [s for s in student_map.values() if s["pct"] >= min_pct],
+        key=lambda x: x["admission_number"]
+    )
+
+    term_labels = {1: "Term 1 (Jan–Apr)", 2: "Term 2 (May–Aug)", 3: "Term 3 (Sep–Dec)"}
+    term_label  = term_labels.get(term, "All Terms") if term else "All Terms"
+
+    from utils import now_eat
+    return render_template("dept_admin/assessment_sheet_pdf.html",
+                           cls=cls, unit=unit,
+                           dept_name=dept.get("name", ""),
+                           eligible=eligible,
+                           year=year, term=term, min_pct=min_pct,
+                           term_label=term_label,
+                           date_gen=now_eat().strftime("%d %b %Y %H:%M"))
+
+
 # ── Bulk Import (Excel) ───────────────────────────────────────────────────────
 
 @dept_admin_bp.route("/import", methods=["GET", "POST"])

@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Class List — {{ cls.name }}</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Arial', sans-serif; line-height:1.5; }
+    @media print { .no-print { display:none; } @page { size:A4; margin:0.5in; } }
+    .container { max-width:8.5in; margin:0 auto; padding:24px; }
+    .header { text-align:center; border-bottom:3px solid #1565c0; padding-bottom:16px; margin-bottom:20px; }
+    .header img { height:60px; margin-bottom:10px; }
+    .header h1 { font-size:18px; color:#333; margin-bottom:4px; }
+    .header h2 { font-size:14px; color:#555; font-weight:400; }
+    .header h3 { font-size:15px; color:#1565c0; margin-top:6px; text-decoration:underline; font-weight:700; }
+    .meta { display:flex; justify-content:space-between; font-size:12px; color:#555; margin-bottom:20px; background:#f3f4f6; padding:10px 14px; border-radius:6px; flex-wrap:wrap; gap:8px; }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    thead { background:#1565c0; }
+    th { padding:10px 14px; text-align:left; font-weight:700; color:#fff; border:1px solid #0d47a1; }
+    td { padding:10px 14px; border:1px solid #ddd; vertical-align:middle; }
+    tbody tr:nth-child(even) { background:#f5f8ff; }
+    .num { color:#888; font-size:12px; text-align:center; }
+    .adm { font-family:monospace; font-weight:700; color:#1565c0; }
+    .footer-sig { display:grid; grid-template-columns:1fr 1fr; gap:40px; margin-top:50px; padding-top:20px; border-top:1px solid #ddd; }
+    .sig-box { text-align:center; }
+    .sig-line { border-bottom:1px solid #333; height:50px; margin-bottom:8px; }
+    .sig-label { font-weight:700; font-size:12px; }
+    .sig-sub { font-size:11px; color:#666; }
+    .btn-row { margin-top:20px; text-align:right; }
+    .btn { padding:9px 18px; margin-left:8px; border:none; border-radius:6px; cursor:pointer; font-size:14px; font-weight:600; }
+    .btn-print { background:#1565c0; color:#fff; }
+    .btn-back  { background:#666; color:#fff; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <img src="{{ LOGO_URL }}" alt="Logo">
+    <h1>THIKA TECHNICAL TRAINING INSTITUTE</h1>
+    <h2>Department of {{ dept_name }}</h2>
+    <h3>CLASS LIST — {{ cls.name }}</h3>
+  </div>
+
+  <div class="meta">
+    <span><strong>Class:</strong> {{ cls.name }}</span>
+    <span><strong>Department:</strong> {{ dept_name }}</span>
+    <span><strong>Total Students:</strong> {{ students|length }}</span>
+    <span><strong>Date Generated:</strong> {{ date_gen }}</span>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:50px;text-align:center;">#</th>
+        <th style="width:160px;">Admission No</th>
+        <th>Student Name</th>
+        <th style="width:120px;">Signature</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% if students %}
+        {% for s in students %}
+        <tr>
+          <td class="num">{{ loop.index }}</td>
+          <td class="adm">{{ s.admission_number }}</td>
+          <td>{{ s.full_name }}</td>
+          <td></td>
+        </tr>
+        {% endfor %}
+      {% else %}
+        <tr><td colspan="4" style="text-align:center;color:#999;padding:20px;">No students found.</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+
+  <div class="footer-sig">
+    <div class="sig-box">
+      <div class="sig-line"></div>
+      <div class="sig-label">CLASS TEACHER / TRAINER</div>
+      <div class="sig-sub">Name: _______________</div>
+      <div class="sig-sub">Signature &amp; Date</div>
+    </div>
+    <div class="sig-box">
+      <div class="sig-line"></div>
+      <div class="sig-label">HEAD OF DEPARTMENT</div>
+      <div class="sig-sub">Name: _______________</div>
+      <div class="sig-sub">Signature &amp; Date</div>
+    </div>
+  </div>
+
+  <div class="btn-row no-print">
+    <button class="btn btn-print" onclick="window.print()">Print / Save PDF</button>
+    <button class="btn btn-back" onclick="history.back()">Back</button>
+  </div>
+</div>
+</body>
+</html>
