@@ -34,6 +34,41 @@
     .modal-box textarea { width:100%; padding:9px 12px; border:1px solid #ccc; border-radius:6px; font-size:14px; resize:vertical; min-height:80px; }
     .modal-box textarea:focus { outline:none; border-color:var(--primary); }
     .modal-footer { display:flex; gap:10px; justify-content:flex-end; margin-top:18px; }
+
+    /* ── Custom attendance checkboxes (large, styled) ── */
+    .att-table-header { background: #1e5a9f; color: #fff; padding: 14px 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 0; text-align: center; font-size: 16px; font-weight: 700; border-radius: 8px 8px 0 0; }
+    .att-table-header .col-present { background: #1e5a9f; }
+    .att-table-header .col-absent  { background: #1e5a9f; }
+    .att-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border-bottom: 1px solid #e0e0e0; background: #fff; }
+    .att-row:hover { background: #f8fbff; }
+    .att-cell { padding: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background .15s; }
+    .att-cell:hover { background: rgba(0,0,0,.02); }
+    .att-cell.present-col { border-right: 1px solid #e0e0e0; }
+
+    /* Custom checkbox */
+    .att-checkbox-wrap { display: flex; align-items: center; justify-content: center; width: 100%; }
+    .att-checkbox-wrap input[type="checkbox"] { display: none; }
+    .att-checkbox-label { width: 56px; height: 56px; border: 3px solid #ccc; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; background: #fff; }
+    .att-checkbox-label i { font-size: 32px; opacity: 0; transition: opacity .2s; }
+
+    /* Present checkbox */
+    .att-checkbox-wrap.present input:checked + .att-checkbox-label { border-color: #27ae60; background: #e8f5e9; }
+    .att-checkbox-wrap.present input:checked + .att-checkbox-label i { opacity: 1; color: #27ae60; }
+
+    /* Absent checkbox */
+    .att-checkbox-wrap.absent input:checked + .att-checkbox-label { border-color: #e74c3c; background: #ffebee; }
+    .att-checkbox-wrap.absent input:checked + .att-checkbox-label i { opacity: 1; color: #e74c3c; }
+
+    /* Student info column (hidden on mobile, shown above checkboxes) */
+    .student-info-row { background: #f5f5f5; padding: 10px 16px; font-weight: 600; font-size: 14px; color: #333; border-bottom: 1px solid #e0e0e0; }
+    .student-count-badge { background: #e3f2fd; color: #1e5a9f; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; float: right; }
+
+    @media (max-width: 768px) {
+      .att-table-header { font-size: 14px; padding: 12px 14px; }
+      .att-checkbox-label { width: 48px; height: 48px; }
+      .att-checkbox-label i { font-size: 26px; }
+      .att-cell { padding: 12px; }
+    }
   </style>
 </head>
 <body>
@@ -156,42 +191,82 @@
     </div>
     {% endif %}
 
+    {% if students_list %}
+    <!-- Quick select bar -->
+    <div style="padding:10px 16px;background:#f9f9f9;border-bottom:1px solid #eee;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <span style="font-size:12px;color:#666;font-weight:600;">Quick select:</span>
+      <button type="button" onclick="markAll('present')"
+        style="padding:5px 14px;background:#e8f5e9;color:#2e7d32;border:1.5px solid #27ae60;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">
+        <i class="fas fa-check"></i> All Present
+      </button>
+      <button type="button" onclick="markAll('absent')"
+        style="padding:5px 14px;background:#ffebee;color:#c62828;border:1.5px solid #e74c3c;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">
+        <i class="fas fa-times"></i> All Absent
+      </button>
+    </div>
+    {% endif %}
+
     {% if not students_list %}
     <div style="text-align:center;padding:40px;color:#aaa;">
       <i class="fas fa-users" style="font-size:36px;margin-bottom:12px;display:block;opacity:0.4;"></i>
       Select a class above to load students.
     </div>
     {% else %}
-    <div class="table-wrap">
-      <table class="att-table" style="width:100%;border-collapse:collapse;">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Adm No.</th>
-            <th>Student Name</th>
-            <th style="text-align:center;">Present</th>
-            <th style="text-align:center;">Absent</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for s in students_list %}
-          <tr>
-            <td style="color:#aaa;font-size:13px;">{{ loop.index }}</td>
-            <td style="font-weight:600;">{{ s.admission_number }}</td>
-            <td>{{ s.full_name }}</td>
-            <td class="center">
-              <input type="checkbox" class="att-checkbox present" id="present_{{ s.id }}"
-                     data-student-id="{{ s.id }}" onclick="toggleCheckbox({{ s.id }}, 'present')">
-            </td>
-            <td class="center">
-              <input type="checkbox" class="att-checkbox absent" id="absent_{{ s.id }}"
-                     data-student-id="{{ s.id }}" onclick="toggleCheckbox({{ s.id }}, 'absent')" checked>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+
+    <!-- Header row -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #eee;">
+      <span style="font-size:14px;font-weight:600;color:#333;">
+        <i class="fas fa-users"></i> Student List
+      </span>
+      <span class="student-count-badge">{{ students_list|length }} student(s)</span>
     </div>
+
+    <!-- Column headers -->
+    <div style="display:grid;grid-template-columns:2fr 1fr 1fr;background:#1e5a9f;color:#fff;font-weight:700;font-size:14px;">
+      <div style="padding:14px 16px;">Student</div>
+      <div style="padding:14px 16px;text-align:center;border-left:1px solid rgba(255,255,255,.2);">
+        <i class="fas fa-check" style="color:#a5d6a7;margin-right:6px;"></i>Present
+      </div>
+      <div style="padding:14px 16px;text-align:center;border-left:1px solid rgba(255,255,255,.2);">
+        <i class="fas fa-times" style="color:#ef9a9a;margin-right:6px;"></i>Absent
+      </div>
+    </div>
+
+    <!-- Student rows -->
+    {% for s in students_list %}
+    <div style="display:grid;grid-template-columns:2fr 1fr 1fr;border-bottom:1px solid #eee;background:#fff;transition:background .15s;"
+         onmouseover="this.style.background='#f8fbff'" onmouseout="this.style.background='#fff'">
+
+      <!-- Student info -->
+      <div style="padding:14px 16px;display:flex;flex-direction:column;justify-content:center;">
+        <span style="font-weight:600;font-size:14px;color:#333;">{{ s.full_name }}</span>
+        <span style="font-size:12px;color:#888;margin-top:2px;">{{ s.admission_number }}</span>
+      </div>
+
+      <!-- Present checkbox -->
+      <div style="padding:12px;display:flex;align-items:center;justify-content:center;border-left:1px solid #eee;cursor:pointer;"
+           onclick="toggleCheckbox({{ s.id }}, 'present')">
+        <div class="att-checkbox-wrap present">
+          <input type="checkbox" id="present_{{ s.id }}" data-student-id="{{ s.id }}">
+          <label class="att-checkbox-label" for="present_{{ s.id }}">
+            <i class="fas fa-check"></i>
+          </label>
+        </div>
+      </div>
+
+      <!-- Absent checkbox (checked by default) -->
+      <div style="padding:12px;display:flex;align-items:center;justify-content:center;border-left:1px solid #eee;cursor:pointer;"
+           onclick="toggleCheckbox({{ s.id }}, 'absent')">
+        <div class="att-checkbox-wrap absent">
+          <input type="checkbox" id="absent_{{ s.id }}" data-student-id="{{ s.id }}" checked>
+          <label class="att-checkbox-label" for="absent_{{ s.id }}">
+            <i class="fas fa-times"></i>
+          </label>
+        </div>
+      </div>
+
+    </div>
+    {% endfor %}
     {% endif %}
 
     <div class="action-bar">
@@ -245,8 +320,23 @@
   function toggleCheckbox(id, type) {
     var p = document.getElementById('present_' + id);
     var a = document.getElementById('absent_' + id);
-    if (type === 'present') { a.checked = !p.checked; }
-    else { p.checked = !a.checked; }
+    if (type === 'present') {
+      p.checked = true;
+      a.checked = false;
+    } else {
+      a.checked = true;
+      p.checked = false;
+    }
+  }
+
+  function markAll(type) {
+    studentIds.forEach(function(sid) {
+      var p = document.getElementById('present_' + sid);
+      var a = document.getElementById('absent_' + sid);
+      if (!p || !a) return;
+      if (type === 'present') { p.checked = true;  a.checked = false; }
+      else                    { a.checked = true;  p.checked = false; }
+    });
   }
 
   function viewAttendance() {
