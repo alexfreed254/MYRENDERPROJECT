@@ -1,51 +1,46 @@
 """
 db.py — Supabase client factory.
 
-Two clients are exposed:
-  • get_anon_client()    — uses the anon/public key (respects RLS)
-  • get_service_client() — uses the service_role key (bypasses RLS, for
-                           admin operations and audit logging only)
-
-The user-scoped client (with the JWT from the logged-in user) is built
-on-demand in auth_utils.py so that RLS policies fire correctly.
+NOTE: We do NOT use lru_cache here. Supabase-py clients can go stale
+across requests (especially the auth state). Fresh clients are cheap
+to create and avoid hard-to-debug connection errors.
 """
 
 import os
-from functools import lru_cache
 from supabase import create_client, Client
 from dotenv import load_dotenv
 
 load_dotenv()
 
-SUPABASE_URL: str = os.environ["SUPABASE_URL"]
-SUPABASE_ANON_KEY: str = os.environ["SUPABASE_ANON_KEY"]
-SUPABASE_SERVICE_KEY: str = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
+SUPABASE_URL: str  = os.environ.get("SUPABASE_URL", "")
+SUPABASE_ANON_KEY: str  = os.environ.get("SUPABASE_ANON_KEY", "")
+SUPABASE_SERVICE_KEY: str = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
 
 
-@lru_cache(maxsize=1)
 def get_anon_client() -> Client:
     """Anon client — honours RLS. Use for public/unauthenticated calls."""
     return create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 
-@lru_cache(maxsize=1)
 def get_service_client() -> Client:
     """
     Service-role client — bypasses RLS.
-    Use ONLY for:
-      - Creating / disabling auth users (super_admin actions)
-      - Writing audit logs
-      - Backend-only data validation
-    Never expose this client's responses directly to the browser.
+    Use ONLY for server-side admin operations and audit logging.
+    Never expose responses from this client directly to the browser.
     """
     return create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
 
 def get_user_client(access_token: str) -> Client:
     """
-    Returns a Supabase client authenticated as the given user.
-    RLS policies will fire using this user's JWT.
+    Returns a Supabase client with the user's JWT set.
+    RLS policies fire using this user's identity.
     """
     client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
-    client.auth.set_session(access_token, "")   # sets Authorization header
+    # set_session requires both access and refresh tokens
+    # We pass a dummy refresh token — we only need the access token for queries
+    try:
+        client.postgrest.auth(access_token)
+    except Exception:
+        pass
     return client

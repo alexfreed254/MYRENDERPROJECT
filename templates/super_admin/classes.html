@@ -1,0 +1,49 @@
+{% extends "super_admin/base.html" %}
+{% block title %}Classes{% endblock %}
+{% block page_title %}Manage Classes{% endblock %}
+{% block extra_style %}
+.page-wrap{padding:24px}.card{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:24px;overflow:hidden}.card-header{background:#7b1fa2;color:#fff;padding:14px 20px;font-size:14px;font-weight:600}.card-body{padding:20px}.inline-form{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}.form-group label{display:block;font-size:12px;font-weight:600;color:#555;margin-bottom:5px}.form-group input,.form-group select{padding:9px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;min-width:180px}.btn{padding:9px 18px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}.btn-primary{background:#7b1fa2;color:#fff}.btn-danger{background:#c62828;color:#fff;padding:5px 12px;font-size:12px}.error-box{background:#ffebee;color:#c62828;border-radius:6px;padding:10px 14px;font-size:13px;margin-bottom:16px}table{width:100%;border-collapse:collapse}th{background:#f5f5f5;padding:11px 14px;text-align:left;font-size:12px;color:#555;border-bottom:2px solid #eee}td{padding:11px 14px;border-bottom:1px solid #f0f0f0;font-size:13px}
+{% endblock %}
+{% block content %}
+<div class="page-wrap">
+  <div class="card">
+    <div class="card-header"><i class="fas fa-plus"></i> Add Class</div>
+    <div class="card-body">
+      {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
+      <form method="post">
+        <input type="hidden" name="action" value="create">
+        <div class="inline-form">
+          <div class="form-group"><label>Class Name</label><input type="text" name="name" placeholder="e.g. ICT 1A" required></div>
+          <div class="form-group"><label>Department</label>
+            <select name="department_id" required>
+              <option value="">-- Select --</option>
+              {% for d in depts %}<option value="{{ d.id }}" {% if dept_filter==d.id %}selected{% endif %}>{{ d.name }}</option>{% endfor %}
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary" style="margin-top:20px"><i class="fas fa-save"></i> Add</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><i class="fas fa-list"></i> Classes ({{ classes|length }})</div>
+    <table><thead><tr><th>#</th><th>Name</th><th>Department</th><th>Action</th></tr></thead>
+    <tbody>
+      {% for c in classes %}
+      <tr>
+        <td style="color:#aaa">{{ loop.index }}</td>
+        <td><strong>{{ c.name }}</strong></td>
+        <td>{{ c.departments.name if c.departments else '—' }}</td>
+        <td>
+          <form method="post" style="display:inline" onsubmit="return confirm('Delete this class?')">
+            <input type="hidden" name="action" value="delete">
+            <input type="hidden" name="class_id" value="{{ c.id }}">
+            <button type="submit" class="btn btn-danger"><i class="fas fa-trash"></i> Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}<tr><td colspan="4" style="text-align:center;color:#aaa;padding:32px">No classes yet.</td></tr>{% endfor %}
+    </tbody></table>
+  </div>
+</div>
+{% endblock %}

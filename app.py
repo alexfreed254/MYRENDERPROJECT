@@ -1,22 +1,24 @@
 """
 app.py — Flask application entry point.
-Hosted on Render.  Database + Auth via Supabase.
+Hosted on Render. Database + Auth via Supabase.
 """
 
 import os
+import traceback
 from datetime import timedelta
-from flask import Flask
+from flask import Flask, render_template
 from dotenv import load_dotenv
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.environ["SECRET_KEY"]
+# Fallback secret key for local dev — always set SECRET_KEY in production
+app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-in-production")
 
 # ── Session / Cookie config ───────────────────────────────────────────────────
-app.config["SESSION_COOKIE_SAMESITE"]    = "None"
-app.config["SESSION_COOKIE_SECURE"]      = True
+app.config["SESSION_COOKIE_SAMESITE"]    = "Lax"   # "None" requires HTTPS everywhere
+app.config["SESSION_COOKIE_SECURE"]      = False    # Set True when behind HTTPS on Render
 app.config["SESSION_COOKIE_HTTPONLY"]    = True
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=1)
 
@@ -28,15 +30,18 @@ from auth_utils import refresh_session_if_needed
 
 @app.before_request
 def before_request():
-    refresh_session_if_needed()
+    try:
+        refresh_session_if_needed()
+    except Exception:
+        pass  # never block a request due to token refresh failure
 
 # ── Blueprints ────────────────────────────────────────────────────────────────
-from routes.main       import main_bp
-from routes.auth       import auth_bp
+from routes.main        import main_bp
+from routes.auth        import auth_bp
 from routes.super_admin import super_admin_bp
 from routes.dept_admin  import dept_admin_bp
-from routes.lecturer   import lecturer_bp
-from routes.student    import student_bp
+from routes.lecturer    import lecturer_bp
+from routes.student     import student_bp
 
 app.register_blueprint(main_bp)
 app.register_blueprint(auth_bp,        url_prefix="/auth")
@@ -50,22 +55,33 @@ app.register_blueprint(student_bp,     url_prefix="/student")
 def inject_globals():
     from auth_utils import current_user
     return {
-        "LOGO_URL":      "/static/assets/THIKATTILOGO.jpg",
-        "current_user":  current_user(),
+        "LOGO_URL":     "/static/assets/THIKATTILOGO.jpg",
+        "current_user": current_user(),
     }
 
 # ── Error handlers ────────────────────────────────────────────────────────────
+@app.errorhandler(400)
+def bad_request(e):
+    return render_template("errors/400.html"), 400
+
 @app.errorhandler(403)
 def forbidden(e):
-    return "<h2>403 — Access Denied</h2><p>You do not have permission to view this page.</p><a href='/'>Go Home</a>", 403
+    return render_template("errors/403.html"), 403
 
 @app.errorhandler(404)
 def not_found(e):
-    return "<h2>404 — Page Not Found</h2><a href='/'>Go Home</a>", 404
+    return render_template("errors/404.html"), 404
 
 @app.errorhandler(500)
 def server_error(e):
-    return f"<h2>500 — Server Error</h2><p>{e}</p>", 500
+    # Print full traceback to Render logs
+    traceback.print_exc()
+    return render_template("errors/500.html", error=str(e)), 500
+
+@app.errorhandler(Exception)
+def unhandled_exception(e):
+    traceback.print_exc()
+    return render_template("errors/500.html", error=str(e)), 500
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))

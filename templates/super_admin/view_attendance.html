@@ -1,0 +1,37 @@
+{% extends "super_admin/base.html" %}
+{% block title %}Attendance{% endblock %}
+{% block page_title %}View Attendance Records{% endblock %}
+{% block extra_style %}
+.page-wrap{padding:24px}.card{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);overflow:hidden}table{width:100%;border-collapse:collapse;font-size:12px}th{background:#f5f5f5;padding:10px 14px;text-align:left;font-size:12px;color:#555;border-bottom:2px solid #eee}td{padding:10px 14px;border-bottom:1px solid #f5f5f5}.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}.badge-present{background:#e8f5e9;color:#2e7d32}.badge-absent{background:#ffebee;color:#c62828}
+{% endblock %}
+{% block content %}
+<div class="page-wrap">
+  <div class="card">
+    <div style="padding:20px;border-bottom:1px solid #eee">
+      <form method="get" style="display:flex;gap:10px;flex-wrap:wrap">
+        <select name="unit_id" style="padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px">
+          <option value="">All Units</option>
+          {% for u in units %}<option value="{{ u.id }}" {% if unit_id==u.id %}selected{% endif %}>{{ u.code }}</option>{% endfor %}
+        </select>
+        <input type="number" name="week" placeholder="Week" value="{{ week or '' }}" style="padding:8px;border:1px solid #ddd;border-radius:6px;width:80px;font-size:13px">
+        <button type="submit" style="padding:8px 16px;background:#7b1fa2;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">Filter</button>
+      </form>
+    </div>
+    <div style="overflow-x:auto">
+      <table><thead><tr><th>Date</th><th>Student</th><th>Unit</th><th>Trainer</th><th>Week</th><th>Lesson</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for r in records %}
+        <tr>
+          <td style="white-space:nowrap;color:#888">{{ r.attendance_date[:10] if r.attendance_date else '—' }}</td>
+          <td>{{ r.students.full_name if r.students else '—' }} ({{ r.students.admission_number if r.students else '' }})</td>
+          <td>{{ r.units.code if r.units else '—' }}</td>
+          <td>{{ r.trainers.name if r.trainers else '—' }}</td>
+          <td>{{ r.week }}</td><td>{{ r.lesson }}</td>
+          <td><span class="badge badge-{{ r.status }}">{{ r.status.title() }}</span></td>
+        </tr>
+        {% else %}<tr><td colspan="7" style="text-align:center;color:#aaa;padding:32px">No records found.</td></tr>{% endfor %}
+      </tbody></table>
+    </div>
+  </div>
+</div>
+{% endblock %}

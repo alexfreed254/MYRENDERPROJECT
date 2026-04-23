@@ -1,0 +1,51 @@
+{% extends "super_admin/base.html" %}
+{% block title %}Students{% endblock %}
+{% block page_title %}Manage Students{% endblock %}
+{% block extra_style %}
+.page-wrap{padding:24px}.card{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:24px;overflow:hidden}.card-header{background:#7b1fa2;color:#fff;padding:14px 20px;font-size:14px;font-weight:600}.card-body{padding:20px}.form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}.form-group label{display:block;font-size:12px;font-weight:600;color:#555;margin-bottom:5px}.form-group input,.form-group select{width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px}.btn{padding:9px 18px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}.btn-primary{background:#7b1fa2;color:#fff}.btn-danger{background:#c62828;color:#fff;padding:5px 12px;font-size:12px}.error-box{background:#ffebee;color:#c62828;border-radius:6px;padding:10px 14px;font-size:13px;margin-bottom:16px}table{width:100%;border-collapse:collapse}th{background:#f5f5f5;padding:11px 14px;text-align:left;font-size:12px;color:#555;border-bottom:2px solid #eee}td{padding:11px 14px;border-bottom:1px solid #f0f0f0;font-size:13px}
+{% endblock %}
+{% block content %}
+<div class="page-wrap">
+  <div class="card">
+    <div class="card-header"><i class="fas fa-plus"></i> Add Student</div>
+    <div class="card-body">
+      {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
+      <form method="post">
+        <input type="hidden" name="action" value="create">
+        <div class="form-row">
+          <div class="form-group"><label>Admission No.</label><input type="text" name="admission_number" required></div>
+          <div class="form-group"><label>Full Name</label><input type="text" name="full_name" required></div>
+          <div class="form-group"><label>Class</label>
+            <select name="class_id" required>
+              <option value="">-- Select --</option>
+              {% for c in classes %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
+            </select>
+          </div>
+        </div>
+        <div style="margin-top:14px"><button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Add Student</button></div>
+      </form>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><i class="fas fa-list"></i> Students ({{ students|length }})</div>
+    <table><thead><tr><th>#</th><th>Adm No.</th><th>Name</th><th>Class</th><th>Action</th></tr></thead>
+    <tbody>
+      {% for s in students %}
+      <tr>
+        <td style="color:#aaa">{{ loop.index }}</td>
+        <td>{{ s.admission_number }}</td>
+        <td><strong>{{ s.full_name }}</strong></td>
+        <td>{{ s.classes.name if s.classes else '—' }}</td>
+        <td>
+          <form method="post" style="display:inline" onsubmit="return confirm('Delete this student?')">
+            <input type="hidden" name="action" value="delete">
+            <input type="hidden" name="student_id" value="{{ s.id }}">
+            <button type="submit" class="btn btn-danger"><i class="fas fa-trash"></i> Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}<tr><td colspan="5" style="text-align:center;color:#aaa;padding:32px">No students yet.</td></tr>{% endfor %}
+    </tbody></table>
+  </div>
+</div>
+{% endblock %}

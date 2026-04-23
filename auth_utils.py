@@ -2,64 +2,64 @@
 auth_utils.py — Authentication helpers and RBAC decorators.
 
 All role checks are enforced here in Python (backend), in addition to
-Supabase RLS.  Never rely on frontend-only checks.
+Supabase RLS. Never rely on frontend-only checks.
 """
 
+import traceback
 from functools import wraps
-from flask import session, redirect, url_for, abort, request, g
-from db import get_service_client, get_user_client
+from typing import Optional
+from flask import session, redirect, url_for, abort, request
+from db import get_service_client, get_anon_client
 
 
-# ── Session keys ─────────────────────────────────────────────────────────────
-SESSION_USER     = "sb_user"       # dict: id, email, role, dept_id, name, active
-SESSION_ACCESS   = "sb_access_token"
-SESSION_REFRESH  = "sb_refresh_token"
+# ── Session keys ──────────────────────────────────────────────────────────────
+SESSION_USER    = "sb_user"
+SESSION_ACCESS  = "sb_access_token"
+SESSION_REFRESH = "sb_refresh_token"
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-def current_user() -> dict | None:
+def current_user() -> Optional[dict]:
     return session.get(SESSION_USER)
 
 
 def is_authenticated() -> bool:
-    return SESSION_USER in session and session[SESSION_USER].get("active", False)
+    user = session.get(SESSION_USER)
+    return bool(user and user.get("active", False))
 
 
-def get_authed_client():
-    """Return a Supabase client scoped to the current user's JWT."""
-    token = session.get(SESSION_ACCESS)
-    if not token:
-        abort(401)
-    return get_user_client(token)
-
-
-def load_user_profile(user_id: str) -> dict | None:
+def load_user_profile(user_id: str) -> Optional[dict]:
     """Fetch user_profiles row using the service client (bypasses RLS)."""
-    svc = get_service_client()
-    res = svc.table("user_profiles").select("*").eq("id", user_id).single().execute()
-    return res.data if res.data else None
+    try:
+        svc = get_service_client()
+        res = svc.table("user_profiles").select("*").eq("id", user_id).single().execute()
+        return res.data if res.data else None
+    except Exception:
+        return None
 
 
 def refresh_session_if_needed():
     """
-    Called before each request.  If the access token is close to expiry,
-    use the refresh token to get a new one and update the session.
+    Called before each request. Attempts to refresh the JWT using the
+    stored refresh token. Silently skips on any error.
     """
-    if SESSION_REFRESH not in session:
+    if SESSION_REFRESH not in session or SESSION_ACCESS not in session:
         return
     try:
-        anon = get_user_client(session.get(SESSION_ACCESS, ""))
-        resp = anon.auth.refresh_session(session[SESSION_REFRESH])
+        client = get_anon_client()
+        resp = client.auth.refresh_session(session[SESSION_REFRESH])
         if resp and resp.session:
             session[SESSION_ACCESS]  = resp.session.access_token
             session[SESSION_REFRESH] = resp.session.refresh_token
     except Exception:
-        pass  # let the next request fail naturally if token is truly expired
+        # Token may be expired — user will be redirected to login on next
+        # protected route access. Do not crash here.
+        pass
 
 
 def write_audit_log(action: str, target: str = None, detail: dict = None):
-    """Write to system_logs using the service client (bypasses RLS)."""
+    """Write to system_logs using the service client. Never raises."""
     user = current_user()
     try:
         svc = get_service_client()
@@ -88,7 +88,7 @@ def login_required(f):
 
 def role_required(*roles):
     """
-    Decorator that enforces one or more allowed roles.
+    Enforce one or more allowed roles.
     Usage:  @role_required('super_admin')
             @role_required('super_admin', 'dept_admin')
     """
@@ -98,7 +98,7 @@ def role_required(*roles):
             if not is_authenticated():
                 return redirect(url_for("main.index"))
             user = current_user()
-            if user.get("role") not in roles:
+            if not user or user.get("role") not in roles:
                 abort(403)
             return f(*args, **kwargs)
         return decorated
@@ -110,6 +110,7 @@ def super_admin_required(f):
 
 
 def dept_admin_required(f):
+    # super_admin can also access dept_admin pages
     return role_required("super_admin", "dept_admin")(f)
 
 
@@ -123,8 +124,7 @@ def student_required(f):
 
 def dept_isolation_check(department_id: int) -> bool:
     """
-    Backend enforcement of department isolation.
-    Returns True if the current user is allowed to access the given dept.
+    Returns True if the current user may access the given department.
     super_admin can access any dept; others only their own.
     """
     user = current_user()
