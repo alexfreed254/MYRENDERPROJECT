@@ -35,39 +35,43 @@
     .modal-box textarea:focus { outline:none; border-color:var(--primary); }
     .modal-footer { display:flex; gap:10px; justify-content:flex-end; margin-top:18px; }
 
-    /* ── Custom attendance checkboxes (large, styled) ── */
-    .att-table-header { background: #1e5a9f; color: #fff; padding: 14px 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 0; text-align: center; font-size: 16px; font-weight: 700; border-radius: 8px 8px 0 0; }
-    .att-table-header .col-present { background: #1e5a9f; }
-    .att-table-header .col-absent  { background: #1e5a9f; }
-    .att-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border-bottom: 1px solid #e0e0e0; background: #fff; }
-    .att-row:hover { background: #f8fbff; }
-    .att-cell { padding: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background .15s; }
-    .att-cell:hover { background: rgba(0,0,0,.02); }
-    .att-cell.present-col { border-right: 1px solid #e0e0e0; }
+    /* ── Custom attendance checkboxes ── */
+    .att-checkbox-wrap { display:flex; align-items:center; justify-content:center; }
+    .att-checkbox-wrap input[type="checkbox"] { display:none; }
 
-    /* Custom checkbox */
-    .att-checkbox-wrap { display: flex; align-items: center; justify-content: center; width: 100%; }
-    .att-checkbox-wrap input[type="checkbox"] { display: none; }
-    .att-checkbox-label { width: 30px; height: 30px; border: 2.5px solid #ccc; border-radius: 7px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; background: #fff; }
-    .att-checkbox-label i { font-size: 16px; opacity: 0; transition: opacity .2s; }
+    /* Base label — unchecked state: plain grey border box */
+    .att-checkbox-label {
+      width: 28px; height: 28px;
+      border: 2px solid #ccc;
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: all .18s;
+      background: #fff;
+    }
+    .att-checkbox-label i { font-size: 15px; opacity: 0; transition: opacity .18s; }
 
-    /* Present checkbox */
-    .att-checkbox-wrap.present input:checked + .att-checkbox-label { border-color: #27ae60; background: #e8f5e9; }
-    .att-checkbox-wrap.present input:checked + .att-checkbox-label i { opacity: 1; color: #27ae60; }
+    /* Present — checked: green border + green bg + green tick */
+    .att-checkbox-wrap.present input:checked + .att-checkbox-label {
+      border-color: #27ae60;
+      background: #e8f5e9;
+    }
+    .att-checkbox-wrap.present input:checked + .att-checkbox-label i {
+      opacity: 1; color: #27ae60;
+    }
 
-    /* Absent checkbox */
-    .att-checkbox-wrap.absent input:checked + .att-checkbox-label { border-color: #e74c3c; background: #ffebee; }
-    .att-checkbox-wrap.absent input:checked + .att-checkbox-label i { opacity: 1; color: #e74c3c; }
-
-    /* Student info column (hidden on mobile, shown above checkboxes) */
-    .student-info-row { background: #f5f5f5; padding: 10px 16px; font-weight: 600; font-size: 14px; color: #333; border-bottom: 1px solid #e0e0e0; }
-    .student-count-badge { background: #e3f2fd; color: #1e5a9f; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; float: right; }
+    /* Absent — checked: red border + light red bg + red X */
+    .att-checkbox-wrap.absent input:checked + .att-checkbox-label {
+      border-color: #e74c3c;
+      background: #ffebee;
+    }
+    .att-checkbox-wrap.absent input:checked + .att-checkbox-label i {
+      opacity: 1; color: #e74c3c;
+    }
 
     @media (max-width: 768px) {
-      .att-table-header { font-size: 13px; padding: 10px 12px; }
-      .att-checkbox-label { width: 28px; height: 28px; }
-      .att-checkbox-label i { font-size: 14px; }
-      .att-cell { padding: 8px; }
+      .att-checkbox-label { width: 26px; height: 26px; border-radius: 5px; }
+      .att-checkbox-label i { font-size: 13px; }
     }
   </style>
 </head>
@@ -155,11 +159,15 @@
   </div>
 
   <!-- Student list -->
-  <div class="card">
-    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-      <span><i class="fas fa-users"></i> Student List</span>
+  <div class="card" style="border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.07);">
+
+    <!-- Card title row -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:#fff;border-bottom:1px solid #e8eef6;">
+      <span style="font-size:15px;font-weight:700;color:#1e5a9f;">
+        <i class="fas fa-users" style="margin-right:7px;"></i>Student List
+      </span>
       {% if students_list %}
-      <span style="background:#e3f2fd;color:var(--primary);padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;">
+      <span style="background:#e3f2fd;color:#1e5a9f;padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;">
         {{ students_list|length }} student(s)
       </span>
       {% endif %}
@@ -168,12 +176,12 @@
     <div id="attMsg" class="att-msg"></div>
 
     {% if active_event %}
-    <div class="event-banner {{ active_event.event_type }}" style="margin:0 0 4px;">
+    <div class="event-banner {{ active_event.event_type }}">
       <span>
         <i class="fas fa-{% if active_event.event_type == 'holiday' %}umbrella-beach{% else %}bus{% endif %}"></i>
         &nbsp;
         <strong>{% if active_event.event_type == 'holiday' %}Holiday{% else %}Academic Trip{% endif %}</strong>
-        recorded for Week {{ active_event.week }} {{ active_event.lesson }}
+        — Week {{ active_event.week }} {{ active_event.lesson }}
         {% if active_event.note %} &mdash; {{ active_event.note }}{% endif %}
       </span>
       <form method="post" action="/lecturer/delete-event" style="display:inline;" onsubmit="return confirm('Remove this event record?');">
@@ -184,83 +192,71 @@
         <input type="hidden" name="lesson"   value="{{ active_event.lesson }}">
         <input type="hidden" name="year"     value="{{ year }}">
         <input type="hidden" name="term"     value="{{ term }}">
-        <button type="submit" class="btn btn-sm" style="background:rgba(0,0,0,0.12);color:inherit;padding:4px 10px;">
+        <button type="submit" class="btn btn-sm" style="background:rgba(0,0,0,0.12);color:inherit;">
           <i class="fas fa-times"></i> Remove
         </button>
       </form>
     </div>
     {% endif %}
 
-    {% if students_list %}
-    <!-- no quick-select bar -->
-    {% endif %}
-
     {% if not students_list %}
-    <div style="text-align:center;padding:40px;color:#aaa;">
-      <i class="fas fa-users" style="font-size:36px;margin-bottom:12px;display:block;opacity:0.4;"></i>
+    <div style="text-align:center;padding:48px 20px;color:#bbb;">
+      <i class="fas fa-users" style="font-size:40px;margin-bottom:14px;display:block;opacity:0.3;"></i>
       Select a class above to load students.
     </div>
     {% else %}
 
-    <!-- Header row -->
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #eee;">
-      <span style="font-size:14px;font-weight:600;color:#333;">
-        <i class="fas fa-users"></i> Student List
-      </span>
-      <span class="student-count-badge">{{ students_list|length }} student(s)</span>
+    <!-- ── Table ── -->
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;min-width:480px;">
+        <thead>
+          <tr style="background:#2c5f8a;">
+            <th style="width:40px;padding:12px 10px 12px 16px;color:#fff;font-size:13px;font-weight:700;text-align:left;">#</th>
+            <th style="width:130px;padding:12px 10px;color:#fff;font-size:13px;font-weight:700;text-align:left;">Adm No.</th>
+            <th style="padding:12px 10px;color:#fff;font-size:13px;font-weight:700;text-align:left;">Student Name</th>
+            <th style="width:90px;padding:12px 10px;color:#fff;font-size:13px;font-weight:700;text-align:center;">Present</th>
+            <th style="width:90px;padding:12px 10px;color:#fff;font-size:13px;font-weight:700;text-align:center;">Absent</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in students_list %}
+          <tr style="border-bottom:1px solid #eef0f4;background:#fff;transition:background .12s;"
+              onmouseover="this.style.background='#f5f8ff'" onmouseout="this.style.background='#fff'">
+
+            <!-- Row number -->
+            <td style="padding:11px 10px 11px 16px;font-size:13px;color:#aaa;">{{ loop.index }}</td>
+
+            <!-- Admission number -->
+            <td style="padding:11px 10px;font-size:13px;font-weight:700;color:#333;">{{ s.admission_number }}</td>
+
+            <!-- Student name -->
+            <td style="padding:11px 10px;font-size:13px;color:#333;">{{ s.full_name }}</td>
+
+            <!-- Present checkbox -->
+            <td style="padding:8px 10px;text-align:center;cursor:pointer;" onclick="toggleCheckbox({{ s.id }}, 'present')">
+              <div class="att-checkbox-wrap present" style="justify-content:center;">
+                <input type="checkbox" id="present_{{ s.id }}" data-student-id="{{ s.id }}">
+                <label class="att-checkbox-label" for="present_{{ s.id }}">
+                  <i class="fas fa-check"></i>
+                </label>
+              </div>
+            </td>
+
+            <!-- Absent checkbox (default checked) -->
+            <td style="padding:8px 10px;text-align:center;cursor:pointer;" onclick="toggleCheckbox({{ s.id }}, 'absent')">
+              <div class="att-checkbox-wrap absent" style="justify-content:center;">
+                <input type="checkbox" id="absent_{{ s.id }}" data-student-id="{{ s.id }}" checked>
+                <label class="att-checkbox-label" for="absent_{{ s.id }}">
+                  <i class="fas fa-times"></i>
+                </label>
+              </div>
+            </td>
+
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
-
-    <!-- Column headers -->
-    <div style="display:grid;grid-template-columns:1fr 2fr 80px 80px;background:#1e5a9f;color:#fff;font-weight:700;font-size:13px;">
-      <div style="padding:12px 14px;">Adm No.</div>
-      <div style="padding:12px 14px;border-left:1px solid rgba(255,255,255,.2);">Student Name</div>
-      <div style="padding:12px 8px;text-align:center;border-left:1px solid rgba(255,255,255,.2);">
-        <i class="fas fa-check" style="color:#a5d6a7;"></i><br><span style="font-size:11px;">Present</span>
-      </div>
-      <div style="padding:12px 8px;text-align:center;border-left:1px solid rgba(255,255,255,.2);">
-        <i class="fas fa-times" style="color:#ef9a9a;"></i><br><span style="font-size:11px;">Absent</span>
-      </div>
-    </div>
-
-    <!-- Student rows -->
-    {% for s in students_list %}
-    <div style="display:grid;grid-template-columns:1fr 2fr 80px 80px;border-bottom:1px solid #eee;background:#fff;transition:background .15s;"
-         onmouseover="this.style.background='#f8fbff'" onmouseout="this.style.background='#fff'">
-
-      <!-- Admission number -->
-      <div style="padding:12px 14px;display:flex;align-items:center;font-weight:600;font-size:13px;color:#555;">
-        {{ s.admission_number }}
-      </div>
-
-      <!-- Student name -->
-      <div style="padding:12px 14px;display:flex;align-items:center;font-size:13px;color:#333;border-left:1px solid #eee;">
-        {{ s.full_name }}
-      </div>
-
-      <!-- Present checkbox -->
-      <div style="padding:10px 8px;display:flex;align-items:center;justify-content:center;border-left:1px solid #eee;cursor:pointer;"
-           onclick="toggleCheckbox({{ s.id }}, 'present')">
-        <div class="att-checkbox-wrap present">
-          <input type="checkbox" id="present_{{ s.id }}" data-student-id="{{ s.id }}">
-          <label class="att-checkbox-label" for="present_{{ s.id }}">
-            <i class="fas fa-check"></i>
-          </label>
-        </div>
-      </div>
-
-      <!-- Absent checkbox (checked by default) -->
-      <div style="padding:10px 8px;display:flex;align-items:center;justify-content:center;border-left:1px solid #eee;cursor:pointer;"
-           onclick="toggleCheckbox({{ s.id }}, 'absent')">
-        <div class="att-checkbox-wrap absent">
-          <input type="checkbox" id="absent_{{ s.id }}" data-student-id="{{ s.id }}" checked>
-          <label class="att-checkbox-label" for="absent_{{ s.id }}">
-            <i class="fas fa-times"></i>
-          </label>
-        </div>
-      </div>
-
-    </div>
-    {% endfor %}
     {% endif %}
 
     <div class="action-bar">
