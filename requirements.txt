@@ -5,3 +5,4 @@ gotrue==2.5.2
 python-dotenv==1.0.1
 Werkzeug==3.0.3
 pytz==2024.1
+openpyxl==3.1.2

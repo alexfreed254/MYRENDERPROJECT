@@ -403,3 +403,146 @@ def view_attendance():
                            records=records, classes=classes, units=units,
                            class_id=class_id, unit_id=unit_id,
                            week=week, year=year, term=term)
+
+
+# ── Bulk Import (Excel) ───────────────────────────────────────────────────────
+
+@dept_admin_bp.route("/import", methods=["GET", "POST"])
+@dept_admin_required
+def bulk_import():
+    db      = get_service_client()
+    dept_id = _dept_id()
+    result  = None
+    error   = None
+
+    if request.method == "POST":
+        import_type = request.form.get("import_type", "")
+        file = request.files.get("file")
+
+        if not file or not file.filename.endswith(('.xlsx', '.xls')):
+            error = "Please upload a valid Excel file (.xlsx or .xls)"
+        elif import_type not in ("students", "trainers", "classes", "units"):
+            error = "Invalid import type."
+        else:
+            try:
+                import openpyxl
+                wb = openpyxl.load_workbook(file, data_only=True)
+                ws = wb.active
+                rows = list(ws.iter_rows(min_row=2, values_only=True))
+
+                if import_type == "students":
+                    result = _dept_import_students(db, rows, dept_id)
+                elif import_type == "trainers":
+                    result = _dept_import_trainers(db, rows, dept_id)
+                elif import_type == "classes":
+                    result = _dept_import_classes(db, rows, dept_id)
+                elif import_type == "units":
+                    result = _dept_import_units(db, rows, dept_id)
+
+                from auth_utils import write_audit_log
+                write_audit_log("bulk_import", target=import_type,
+                                detail={"count": result.get("success", 0)})
+            except Exception as exc:
+                error = f"Import failed: {exc}"
+
+    # Classes in this dept for the student import hint
+    try:
+        classes = (db.table("classes").select("id, name")
+                     .eq("department_id", dept_id).order("name")
+                     .execute().data or [])
+    except Exception:
+        classes = []
+
+    return render_template("dept_admin/import.html",
+                           result=result, error=error, classes=classes)
+
+
+def _dept_import_students(db, rows, dept_id):
+    # Get valid class ids for this dept
+    valid_ids = {
+        c["id"] for c in
+        db.table("classes").select("id").eq("department_id", dept_id).execute().data or []
+    }
+    success = 0
+    errors  = []
+    for r in rows:
+        if not r or not r[0]:
+            continue
+        try:
+            adm, name, class_id = str(r[0]).strip(), str(r[1]).strip().upper(), int(r[2])
+            if class_id not in valid_ids:
+                errors.append(f"{adm}: class_id {class_id} not in your department")
+                continue
+            db.table("students").insert({
+                "admission_number": adm,
+                "full_name": name,
+                "class_id": class_id,
+            }).execute()
+            success += 1
+        except Exception as exc:
+            errors.append(f"Row {r}: {exc}")
+    return {"success": success, "errors": errors[:10]}
+
+
+def _dept_import_trainers(db, rows, dept_id):
+    from routes.super_admin import _create_auth_user
+    success = 0
+    errors  = []
+    for r in rows:
+        if not r or not r[0]:
+            continue
+        try:
+            name, username, email, password = (
+                str(r[0]).strip(), str(r[1]).strip(),
+                str(r[2]).strip().lower(), str(r[3]).strip()
+            )
+            user_id, err = _create_auth_user(email, password, name, "trainer")
+            if err:
+                errors.append(f"{email}: {err}")
+                continue
+            db.table("user_profiles").upsert({
+                "id": user_id, "full_name": name, "role": "trainer",
+                "department_id": dept_id, "is_active": True,
+            }).execute()
+            db.table("trainers").insert({
+                "user_id": user_id, "name": name,
+                "username": username, "department_id": dept_id,
+            }).execute()
+            success += 1
+        except Exception as exc:
+            errors.append(f"Row {r}: {exc}")
+    return {"success": success, "errors": errors[:10]}
+
+
+def _dept_import_classes(db, rows, dept_id):
+    success = 0
+    errors  = []
+    for r in rows:
+        if not r or not r[0]:
+            continue
+        try:
+            name = str(r[0]).strip().upper()
+            db.table("classes").insert({
+                "name": name, "department_id": dept_id
+            }).execute()
+            success += 1
+        except Exception as exc:
+            errors.append(f"Row {r}: {exc}")
+    return {"success": success, "errors": errors[:10]}
+
+
+def _dept_import_units(db, rows, dept_id):
+    success = 0
+    errors  = []
+    for r in rows:
+        if not r or not r[0]:
+            continue
+        try:
+            code, name = str(r[0]).strip().upper(), str(r[1]).strip()
+            db.table("units").insert({
+                "code": code, "name": name, "department_id": dept_id
+            }).execute()
+            success += 1
+        except Exception as exc:
+            errors.append(f"Row {r}: {exc}")
+    return {"success": success, "errors": errors[:10]}

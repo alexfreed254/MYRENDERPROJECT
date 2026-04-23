@@ -1,0 +1,266 @@
+{% extends "super_admin/base.html" %}
+{% block title %}Import Data{% endblock %}
+{% block page_title %}Bulk Import from Excel{% endblock %}
+
+{% block extra_style %}
+.page-wrap { padding: 24px; max-width: 860px; }
+.card { background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.06); margin-bottom:24px; overflow:hidden; }
+.card-header { background:#7b1fa2; color:#fff; padding:14px 20px; font-size:14px; font-weight:600; }
+.card-body { padding:24px; }
+.tabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:24px; }
+.tab-btn { padding:10px 20px; border:2px solid #ddd; border-radius:8px; background:#fff; cursor:pointer; font-size:13px; font-weight:600; color:#555; transition:all .2s; }
+.tab-btn:hover { border-color:#7b1fa2; color:#7b1fa2; }
+.tab-btn.active { background:#7b1fa2; color:#fff; border-color:#7b1fa2; }
+.tab-panel { display:none; }
+.tab-panel.active { display:block; }
+.upload-area { border:2px dashed #ccc; border-radius:10px; padding:32px; text-align:center; cursor:pointer; transition:border-color .2s; }
+.upload-area:hover { border-color:#7b1fa2; }
+.upload-area i { font-size:40px; color:#ccc; margin-bottom:12px; display:block; }
+.upload-area p { color:#888; font-size:14px; margin-bottom:12px; }
+.file-input { display:none; }
+.btn { padding:10px 22px; border:none; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600; }
+.btn-primary { background:#7b1fa2; color:#fff; }
+.btn-download { background:#1565c0; color:#fff; }
+.result-box { border-radius:8px; padding:14px 18px; margin-top:16px; font-size:13px; }
+.result-success { background:#e8f5e9; color:#2e7d32; border-left:4px solid #2e7d32; }
+.result-error   { background:#ffebee; color:#c62828; border-left:4px solid #c62828; }
+.error-list { margin-top:8px; padding-left:16px; font-size:12px; }
+.error-list li { margin-bottom:3px; }
+.template-box { background:#f8f9fa; border-radius:8px; padding:16px; margin-bottom:20px; }
+.template-box h4 { font-size:13px; font-weight:700; color:#333; margin-bottom:8px; }
+.col-list { display:flex; gap:8px; flex-wrap:wrap; }
+.col-chip { background:#e8eaf6; color:#3949ab; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; }
+.col-chip.required { background:#fce4ec; color:#c62828; }
+table.preview { width:100%; border-collapse:collapse; font-size:12px; margin-top:8px; }
+table.preview th { background:#7b1fa2; color:#fff; padding:6px 10px; }
+table.preview td { padding:6px 10px; border-bottom:1px solid #eee; }
+{% endblock %}
+
+{% block content %}
+<div class="page-wrap">
+
+  {% if error %}
+  <div class="result-box result-error"><i class="fas fa-exclamation-circle"></i> {{ error }}</div>
+  {% endif %}
+
+  {% if result %}
+  <div class="result-box result-success">
+    <i class="fas fa-check-circle"></i>
+    <strong>Import complete:</strong> {{ result.success }} record(s) imported successfully.
+    {% if result.errors %}
+    <ul class="error-list">
+      <li><strong>{{ result.errors|length }} error(s):</strong></li>
+      {% for e in result.errors %}<li>{{ e }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div class="card">
+    <div class="card-header"><i class="fas fa-file-excel"></i> Select Data Type to Import</div>
+    <div class="card-body">
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('students', this)">
+          <i class="fas fa-user-graduate"></i> Students
+        </button>
+        <button class="tab-btn" onclick="switchTab('trainers', this)">
+          <i class="fas fa-chalkboard-teacher"></i> Trainers
+        </button>
+        <button class="tab-btn" onclick="switchTab('classes', this)">
+          <i class="fas fa-door-open"></i> Classes
+        </button>
+        <button class="tab-btn" onclick="switchTab('units', this)">
+          <i class="fas fa-book"></i> Units
+        </button>
+      </div>
+
+      <!-- Students -->
+      <div id="tab-students" class="tab-panel active">
+        <div class="template-box">
+          <h4><i class="fas fa-info-circle"></i> Required Excel Columns (Row 1 = Header, Row 2+ = Data)</h4>
+          <div class="col-list">
+            <span class="col-chip required">A: admission_number</span>
+            <span class="col-chip required">B: full_name</span>
+            <span class="col-chip required">C: class_id (number)</span>
+          </div>
+          <p style="margin-top:10px;font-size:12px;color:#888;">
+            Get class IDs from the Classes page. Example: A001, JOHN DOE, 3
+          </p>
+          <table class="preview">
+            <tr><th>A: admission_number</th><th>B: full_name</th><th>C: class_id</th></tr>
+            <tr><td>ADM001</td><td>JOHN DOE</td><td>1</td></tr>
+            <tr><td>ADM002</td><td>JANE SMITH</td><td>1</td></tr>
+          </table>
+        </div>
+        <form method="post" enctype="multipart/form-data">
+          <input type="hidden" name="import_type" value="students">
+          <div class="upload-area" onclick="document.getElementById('file-students').click()">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <p>Click to select your Excel file or drag and drop here</p>
+            <span id="fname-students" style="font-size:13px;color:#7b1fa2;font-weight:600;"></span>
+          </div>
+          <input type="file" id="file-students" name="file" class="file-input"
+                 accept=".xlsx,.xls" onchange="showName('students', this)">
+          <div style="margin-top:16px;">
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-upload"></i> Import Students
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Trainers -->
+      <div id="tab-trainers" class="tab-panel">
+        <div class="template-box">
+          <h4><i class="fas fa-info-circle"></i> Required Excel Columns</h4>
+          <div class="col-list">
+            <span class="col-chip required">A: full_name</span>
+            <span class="col-chip required">B: username</span>
+            <span class="col-chip required">C: email</span>
+            <span class="col-chip required">D: department_id (number)</span>
+            <span class="col-chip required">E: password (min 8 chars)</span>
+          </div>
+          <table class="preview" style="margin-top:10px;">
+            <tr><th>A: full_name</th><th>B: username</th><th>C: email</th><th>D: dept_id</th><th>E: password</th></tr>
+            <tr><td>ALEX FREED</td><td>alex.freed</td><td>alex@tttti.ac.ke</td><td>2</td><td>Pass@1234</td></tr>
+          </table>
+        </div>
+        <form method="post" enctype="multipart/form-data">
+          <input type="hidden" name="import_type" value="trainers">
+          <div class="upload-area" onclick="document.getElementById('file-trainers').click()">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <p>Click to select your Excel file</p>
+            <span id="fname-trainers" style="font-size:13px;color:#7b1fa2;font-weight:600;"></span>
+          </div>
+          <input type="file" id="file-trainers" name="file" class="file-input"
+                 accept=".xlsx,.xls" onchange="showName('trainers', this)">
+          <div style="margin-top:16px;">
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-upload"></i> Import Trainers
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Classes -->
+      <div id="tab-classes" class="tab-panel">
+        <div class="template-box">
+          <h4><i class="fas fa-info-circle"></i> Required Excel Columns</h4>
+          <div class="col-list">
+            <span class="col-chip required">A: class_name</span>
+            <span class="col-chip required">B: department_id (number)</span>
+          </div>
+          <table class="preview" style="margin-top:10px;">
+            <tr><th>A: class_name</th><th>B: department_id</th></tr>
+            <tr><td>ICT 1A</td><td>2</td></tr>
+            <tr><td>EEE 2B</td><td>3</td></tr>
+          </table>
+        </div>
+        <form method="post" enctype="multipart/form-data">
+          <input type="hidden" name="import_type" value="classes">
+          <div class="upload-area" onclick="document.getElementById('file-classes').click()">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <p>Click to select your Excel file</p>
+            <span id="fname-classes" style="font-size:13px;color:#7b1fa2;font-weight:600;"></span>
+          </div>
+          <input type="file" id="file-classes" name="file" class="file-input"
+                 accept=".xlsx,.xls" onchange="showName('classes', this)">
+          <div style="margin-top:16px;">
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-upload"></i> Import Classes
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Units -->
+      <div id="tab-units" class="tab-panel">
+        <div class="template-box">
+          <h4><i class="fas fa-info-circle"></i> Required Excel Columns</h4>
+          <div class="col-list">
+            <span class="col-chip required">A: unit_code</span>
+            <span class="col-chip required">B: unit_name</span>
+            <span class="col-chip">C: department_id (optional)</span>
+          </div>
+          <table class="preview" style="margin-top:10px;">
+            <tr><th>A: unit_code</th><th>B: unit_name</th><th>C: dept_id</th></tr>
+            <tr><td>ICT101</td><td>Introduction to ICT</td><td>2</td></tr>
+            <tr><td>EEE201</td><td>Circuit Theory</td><td>3</td></tr>
+          </table>
+        </div>
+        <form method="post" enctype="multipart/form-data">
+          <input type="hidden" name="import_type" value="units">
+          <div class="upload-area" onclick="document.getElementById('file-units').click()">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <p>Click to select your Excel file</p>
+            <span id="fname-units" style="font-size:13px;color:#7b1fa2;font-weight:600;"></span>
+          </div>
+          <input type="file" id="file-units" name="file" class="file-input"
+                 accept=".xlsx,.xls" onchange="showName('units', this)">
+          <div style="margin-top:16px;">
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-upload"></i> Import Units
+            </button>
+          </div>
+        </form>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Dept reference -->
+  {% if depts %}
+  <div class="card">
+    <div class="card-header"><i class="fas fa-building"></i> Department ID Reference</div>
+    <div style="padding:16px 20px;">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead><tr>
+          <th style="background:#f5f5f5;padding:8px 12px;text-align:left;border-bottom:2px solid #eee;">ID</th>
+          <th style="background:#f5f5f5;padding:8px 12px;text-align:left;border-bottom:2px solid #eee;">Department Name</th>
+        </tr></thead>
+        <tbody>
+          {% for d in depts %}
+          <tr>
+            <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;font-weight:700;color:#7b1fa2;">{{ d.id }}</td>
+            <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;">{{ d.name }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+{% block scripts %}
+<script>
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+function showName(type, input) {
+  document.getElementById('fname-' + type).textContent =
+    input.files[0] ? '📄 ' + input.files[0].name : '';
+}
+// Drag and drop
+document.querySelectorAll('.upload-area').forEach(area => {
+  area.addEventListener('dragover', e => { e.preventDefault(); area.style.borderColor='#7b1fa2'; });
+  area.addEventListener('dragleave', () => { area.style.borderColor='#ccc'; });
+  area.addEventListener('drop', e => {
+    e.preventDefault(); area.style.borderColor='#ccc';
+    const input = area.nextElementSibling;
+    if (input && e.dataTransfer.files[0]) {
+      input.files = e.dataTransfer.files;
+      const type = input.id.replace('file-','');
+      document.getElementById('fname-'+type).textContent = '📄 ' + e.dataTransfer.files[0].name;
+    }
+  });
+});
+</script>
+{% endblock %}
+{% endblock %}
