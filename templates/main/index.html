@@ -6,7 +6,7 @@
   <title>TTTTI — Unit Attendance Management System</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -18,34 +18,35 @@
       padding: 20px;
     }
 
-    /* ── Main card ── */
+    /* ── Outer wrapper — same blue as body so header blends in ── */
     .card {
-      background: #2d8ae0;
-      border-radius: 18px;
+      background: #2176c7;
+      border-radius: 22px;
       width: 100%;
-      max-width: 580px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      max-width: 620px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.28);
       overflow: hidden;
     }
 
-    /* ── Header section (blue) ── */
+    /* ── Header (blue, blends with body) ── */
     .card-header {
-      padding: 36px 40px 28px;
+      padding: 44px 40px 36px;
       text-align: center;
       color: #fff;
     }
 
     .logo-wrap {
-      width: 80px;
-      height: 80px;
+      width: 90px;
+      height: 90px;
       border-radius: 50%;
-      border: 3px solid rgba(255,255,255,0.6);
+      border: 3px solid rgba(255,255,255,0.55);
       overflow: hidden;
-      margin: 0 auto 18px;
+      margin: 0 auto 22px;
       background: #fff;
       display: flex;
       align-items: center;
       justify-content: center;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.18);
     }
 
     .logo-wrap img {
@@ -55,46 +56,42 @@
     }
 
     .card-header h1 {
-      font-size: 20px;
+      font-size: 22px;
       font-weight: 800;
-      letter-spacing: 0.5px;
-      margin-bottom: 6px;
+      letter-spacing: 1px;
       text-transform: uppercase;
+      margin-bottom: 8px;
+      line-height: 1.25;
     }
 
     .card-header p {
-      font-size: 13px;
-      opacity: 0.85;
+      font-size: 14px;
+      opacity: 0.88;
       font-weight: 400;
+      letter-spacing: 0.2px;
     }
 
-    /* ── Body section (white) ── */
+    /* ── White body ── */
     .card-body {
       background: #fff;
-      padding: 32px 40px 28px;
+      border-radius: 18px 18px 0 0;
+      padding: 36px 36px 32px;
     }
 
     .card-body h2 {
       text-align: center;
-      font-size: 17px;
+      font-size: 18px;
       font-weight: 700;
       color: #1a6bbf;
-      margin-bottom: 24px;
+      margin-bottom: 28px;
+      letter-spacing: 0.2px;
     }
 
     /* ── Role buttons grid ── */
     .role-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-      margin-bottom: 8px;
-    }
-
-    .role-sub {
-      font-size: 10px;
-      font-weight: 400;
-      opacity: 0.85;
-      margin-top: -4px;
+      gap: 18px;
     }
 
     .role-btn {
@@ -102,54 +99,53 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 10px;
-      padding: 22px 12px;
-      border-radius: 12px;
+      gap: 12px;
+      padding: 30px 12px 26px;
+      border-radius: 14px;
       text-decoration: none;
       color: #fff;
       font-weight: 700;
-      font-size: 15px;
+      font-size: 16px;
       transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
       cursor: pointer;
       border: none;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.15);
     }
 
     .role-btn:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-      filter: brightness(1.08);
+      transform: translateY(-4px);
+      box-shadow: 0 10px 28px rgba(0,0,0,0.22);
+      filter: brightness(1.07);
+      color: #fff;
+      text-decoration: none;
     }
 
-    .role-btn:active {
-      transform: translateY(0);
-    }
+    .role-btn:active { transform: translateY(0); }
 
-    .role-btn i {
-      font-size: 28px;
-    }
+    .role-btn i { font-size: 32px; }
 
-    .role-btn.admin   { background: #2d8ae0; }
+    .role-btn.admin   { background: #29a8e0; }
     .role-btn.trainer { background: #8b2fc9; }
     .role-btn.trainee { background: #f5a623; }
 
     /* ── Footer ── */
     .card-footer {
-      background: #f5f5f5;
-      padding: 14px 40px;
+      background: #f7f7f7;
+      padding: 14px 36px;
       text-align: center;
       font-size: 12px;
-      color: #999;
+      color: #aaa;
       border-top: 1px solid #eee;
     }
 
     /* ── Responsive ── */
-    @media (max-width: 420px) {
-      .card-header { padding: 28px 24px 22px; }
-      .card-body   { padding: 24px 20px 20px; }
-      .card-header h1 { font-size: 16px; }
-      .role-grid { gap: 10px; }
-      .role-btn  { padding: 18px 8px; font-size: 13px; }
-      .role-btn i { font-size: 22px; }
+    @media (max-width: 460px) {
+      .card-header { padding: 32px 20px 28px; }
+      .card-body   { padding: 28px 18px 24px; border-radius: 14px 14px 0 0; }
+      .card-header h1 { font-size: 17px; }
+      .role-grid { gap: 12px; }
+      .role-btn  { padding: 22px 8px 20px; font-size: 14px; }
+      .role-btn i { font-size: 26px; }
     }
   </style>
 </head>
@@ -157,7 +153,7 @@
 
   <div class="card">
 
-    <!-- Blue header -->
+    <!-- Blue header — blends with page background -->
     <div class="card-header">
       <div class="logo-wrap">
         <img src="{{ LOGO_URL }}" alt="TTTTI Logo">
@@ -172,25 +168,19 @@
 
       <div class="role-grid">
 
-        <!-- Admin (Super Admin + Dept Admin both use this) -->
-        <a href="/auth/login?role=admin" class="role-btn admin">
+        <a href="/auth/login" class="role-btn admin">
           <i class="fas fa-user-shield"></i>
           <span>Admin</span>
-          <span class="role-sub">Super &amp; Dept Admin</span>
         </a>
 
-        <!-- Trainer -->
         <a href="/auth/trainer-login" class="role-btn trainer">
           <i class="fas fa-chalkboard-teacher"></i>
           <span>Trainer</span>
-          <span class="role-sub">Lecturer Portal</span>
         </a>
 
-        <!-- Trainee -->
         <a href="/auth/student-login" class="role-btn trainee">
           <i class="fas fa-user-graduate"></i>
           <span>Trainee</span>
-          <span class="role-sub">Student Portal</span>
         </a>
 
       </div>
