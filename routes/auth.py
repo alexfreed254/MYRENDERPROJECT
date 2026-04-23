@@ -139,7 +139,117 @@ def student_login():
                            registered=request.args.get("registered"))
 
 
-# ── Unified Login (admin / trainer) ──────────────────────────────────────────
+# ── Trainer Login (username + password) ──────────────────────────────────────
+
+@auth_bp.route("/trainer-login", methods=["GET", "POST"])
+def trainer_login():
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+
+        if not username or not password:
+            return render_template("lecturer/login.html",
+                                   error="Username and password are required.",
+                                   username=username)
+
+        svc = get_service_client()
+
+        # Look up the trainer's auth email by username
+        try:
+            rows = (svc.table("trainers")
+                       .select("user_id, name")
+                       .eq("username", username)
+                       .limit(1)
+                       .execute().data or [])
+        except Exception as exc:
+            return render_template("lecturer/login.html",
+                                   error=f"Database error: {exc}",
+                                   username=username)
+
+        if not rows:
+            return render_template("lecturer/login.html",
+                                   error="Invalid username or password.",
+                                   username=username)
+
+        user_id = rows[0].get("user_id")
+        if not user_id:
+            return render_template("lecturer/login.html",
+                                   error="Account not set up yet. Contact your administrator.",
+                                   username=username)
+
+        # Get the email from auth.users via user_profiles
+        try:
+            profile_rows = (svc.table("user_profiles")
+                               .select("id")
+                               .eq("id", user_id)
+                               .limit(1)
+                               .execute().data or [])
+        except Exception:
+            profile_rows = []
+
+        # Fetch email from Supabase admin API
+        try:
+            user_data = svc.auth.admin.get_user_by_id(user_id)
+            email = user_data.user.email if user_data and user_data.user else None
+        except Exception as exc:
+            return render_template("lecturer/login.html",
+                                   error=f"Could not retrieve account: {exc}",
+                                   username=username)
+
+        if not email:
+            return render_template("lecturer/login.html",
+                                   error="Account email not found. Contact administrator.",
+                                   username=username)
+
+        # Authenticate via Supabase Auth
+        try:
+            client = get_anon_client()
+            resp   = client.auth.sign_in_with_password({"email": email, "password": password})
+        except Exception as exc:
+            msg = str(exc)
+            if any(k in msg.lower() for k in ["invalid login", "invalid credentials", "invalid"]):
+                return render_template("lecturer/login.html",
+                                       error="Invalid username or password.",
+                                       username=username)
+            return render_template("lecturer/login.html",
+                                   error=f"Login error: {msg}",
+                                   username=username)
+
+        if not resp or not resp.user:
+            return render_template("lecturer/login.html",
+                                   error="Login failed. Please try again.",
+                                   username=username)
+
+        profile = _ensure_profile(resp.user.id, email)
+        if not profile:
+            return render_template("lecturer/login.html",
+                                   error="Profile could not be loaded. Contact administrator.",
+                                   username=username)
+
+        if not profile.get("is_active", False):
+            return render_template("lecturer/login.html",
+                                   error="Your account has been disabled.",
+                                   username=username)
+
+        session.permanent = bool(request.form.get("remember"))
+        session[SESSION_ACCESS]  = resp.session.access_token
+        session[SESSION_REFRESH] = resp.session.refresh_token
+        session[SESSION_USER] = {
+            "id":      resp.user.id,
+            "email":   resp.user.email,
+            "name":    profile.get("full_name") or rows[0].get("name") or username,
+            "role":    "trainer",
+            "dept_id": profile.get("department_id"),
+            "active":  profile["is_active"],
+        }
+
+        write_audit_log("trainer_login", target=username)
+        return redirect(url_for("lecturer.dashboard"))
+
+    return render_template("lecturer/login.html", username=request.args.get("username"))
+
+
+# ── Unified Login (admin / dept_admin) ───────────────────────────────────────
 
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
