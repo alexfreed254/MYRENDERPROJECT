@@ -226,12 +226,15 @@
 {% if role == 'trainer' %}
   {% set role_label = 'Trainer' %}
   {% set role_icon  = 'fas fa-chalkboard-teacher' %}
+  {% set role_sub   = 'Lecturer Portal' %}
 {% elif role == 'trainee' %}
   {% set role_label = 'Trainee' %}
   {% set role_icon  = 'fas fa-user-graduate' %}
+  {% set role_sub   = 'Student Portal' %}
 {% else %}
   {% set role_label = 'Admin' %}
   {% set role_icon  = 'fas fa-user-shield' %}
+  {% set role_sub   = 'Super Admin &amp; Department Admin' %}
 {% endif %}
 
 <div class="card">
@@ -246,6 +249,7 @@
     <div class="role-badge {{ role }}">
       <i class="{{ role_icon }}"></i> {{ role_label }} Login
     </div>
+    <p style="font-size:11px;opacity:0.75;margin-top:6px;">{{ role_sub }}</p>
   </div>
 
   <!-- White body -->
@@ -296,7 +300,8 @@
       </div>
 
       <button type="submit" class="btn-login {{ role }}">
-        <i class="{{ role_icon }}"></i> &nbsp;Sign In as {{ role_label }}
+        <i class="{{ role_icon }}"></i> &nbsp;
+        {% if role == 'admin' %}Sign In{% else %}Sign In as {{ role_label }}{% endif %}
       </button>
     </form>
 
