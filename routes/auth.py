@@ -7,29 +7,31 @@ it is created automatically so the user is never locked out.
 
 import traceback
 from flask import (Blueprint, render_template, request,
-                   session, redirect, url_for, flash, jsonify)
+                   session, redirect, url_for, jsonify)
 from db import get_anon_client, get_service_client
 from auth_utils import (
     SESSION_USER, SESSION_ACCESS, SESSION_REFRESH,
-    load_user_profile, write_audit_log,
+    write_audit_log,
 )
 
 auth_bp = Blueprint("auth", __name__)
 
 
 def _ensure_profile(user_id: str, email: str) -> dict:
-    """
+    # Returns the user_profiles row, creating it if missing.
     svc = get_service_client()
-
-    # Try to fetch existing profile
     try:
-        res = svc.table("user_profiles").select("*").eq("id", user_id).single().execute()
-        if res.data:
-            return res.data
+        res = (svc.table("user_profiles")
+                  .select("*")
+                  .eq("id", user_id)
+                  .limit(1)
+                  .execute().data or [])
+        if res:
+            return res[0]
     except Exception:
-        pass  # .single() raises if no row found — fall through to create
+        pass
 
-    # Profile missing — create a default one
+    # Profile missing — create a default student row
     try:
         svc.table("user_profiles").insert({
             "id":            user_id,
@@ -38,9 +40,12 @@ def _ensure_profile(user_id: str, email: str) -> dict:
             "department_id": None,
             "is_active":     True,
         }).execute()
-        # Fetch the newly created row
-        res = svc.table("user_profiles").select("*").eq("id", user_id).single().execute()
-        return res.data if res.data else None
+        res = (svc.table("user_profiles")
+                  .select("*")
+                  .eq("id", user_id)
+                  .limit(1)
+                  .execute().data or [])
+        return res[0] if res else None
     except Exception as exc:
         print(f"[auth] _ensure_profile failed for {user_id}: {exc}")
         traceback.print_exc()
@@ -51,7 +56,6 @@ def _ensure_profile(user_id: str, email: str) -> dict:
 
 @auth_bp.route("/student-login", methods=["GET", "POST"])
 def student_login():
-    """Dedicated login for students using admission number instead of email."""
     if request.method == "POST":
         adm_number = request.form.get("admission_number", "").strip()
         password   = request.form.get("password", "")
@@ -135,7 +139,7 @@ def student_login():
                            registered=request.args.get("registered"))
 
 
-# ── Login ─────────────────────────────────────────────────────────────────────
+# ── Unified Login (admin / trainer) ──────────────────────────────────────────
 
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
@@ -147,7 +151,6 @@ def login():
             return render_template("auth/login.html",
                                    error="Email and password are required.")
 
-        # ── Step 1: Authenticate with Supabase Auth ───────────────────────────
         try:
             client = get_anon_client()
             resp   = client.auth.sign_in_with_password({
@@ -169,23 +172,18 @@ def login():
                                    error="Login failed — no user returned.")
 
         user_id = resp.user.id
-
-        # ── Step 2: Load (or auto-create) user_profiles row ──────────────────
         profile = _ensure_profile(user_id, email)
 
         if not profile:
             return render_template("auth/login.html",
-                                   error=(
-                                       "Profile could not be loaded. "
-                                       "Please run the fix SQL in Supabase and try again."
-                                   ))
+                                   error="Profile could not be loaded. "
+                                         "Please run the fix SQL in Supabase and try again.")
 
         if not profile.get("is_active", False):
             return render_template("auth/login.html",
                                    error="Your account has been disabled. "
                                          "Contact your administrator.")
 
-        # ── Step 3: Store session ─────────────────────────────────────────────
         session.permanent = bool(request.form.get("remember"))
         session[SESSION_ACCESS]  = resp.session.access_token
         session[SESSION_REFRESH] = resp.session.refresh_token
@@ -200,7 +198,6 @@ def login():
 
         write_audit_log("login", target=email)
 
-        # ── Step 4: Redirect by role ──────────────────────────────────────────
         role = profile["role"]
         if role == "super_admin":
             return redirect(url_for("super_admin.dashboard"))
@@ -220,8 +217,7 @@ def login():
 def logout():
     write_audit_log("logout")
     try:
-        client = get_anon_client()
-        client.auth.sign_out()
+        get_anon_client().auth.sign_out()
     except Exception:
         pass
     session.clear()
@@ -237,42 +233,9 @@ def forgot_password():
         email = request.form.get("email", "").strip().lower()
         if email:
             try:
-                client = get_anon_client()
-                client.auth.reset_password_email(email)
+                get_anon_client().auth.reset_password_email(email)
             except Exception:
                 pass
         msg = ("If an account exists for that email address, "
                "a password reset link has been sent.")
     return render_template("auth/forgot_password.html", msg=msg)
-
-
-# ── Debug: check profile (remove after confirming login works) ────────────────
-
-@auth_bp.route("/debug-profile")
-def debug_profile():
-    """
-    Temporary diagnostic endpoint.
-    Visit /auth/debug-profile?email=your@email.com to check if a
-    user_profiles row exists for that email.
-    Remove this route once login is confirmed working.
-    """
-    email = request.args.get("email", "").strip().lower()
-    if not email:
-        return jsonify({"error": "Pass ?email=your@email.com"}), 400
-
-    svc = get_service_client()
-    result = {"email": email}
-
-    try:
-        # Check auth.users
-        # Note: we can't query auth.users directly via the client,
-        # but we can check user_profiles by looking for any row
-        profiles = (svc.table("user_profiles")
-                       .select("id, full_name, role, is_active, department_id")
-                       .execute().data or [])
-        result["total_profiles"] = len(profiles)
-        result["profiles_sample"] = profiles[:5]
-    except Exception as exc:
-        result["profiles_error"] = str(exc)
-
-    return jsonify(result)
