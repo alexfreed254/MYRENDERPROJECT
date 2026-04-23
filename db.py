@@ -1,9 +1,8 @@
 """
 db.py — Supabase client factory.
 
-NOTE: We do NOT use lru_cache here. Supabase-py clients can go stale
-across requests (especially the auth state). Fresh clients are cheap
-to create and avoid hard-to-debug connection errors.
+Keys are stripped of whitespace/newlines defensively so a trailing
+newline in .env or a Render env var never causes "Illegal header value".
 """
 
 import os
@@ -12,9 +11,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-SUPABASE_URL: str  = os.environ.get("SUPABASE_URL", "")
-SUPABASE_ANON_KEY: str  = os.environ.get("SUPABASE_ANON_KEY", "")
-SUPABASE_SERVICE_KEY: str = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+# Strip all whitespace — guards against trailing \n from .env or Render
+SUPABASE_URL: str         = os.environ.get("SUPABASE_URL", "").strip()
+SUPABASE_ANON_KEY: str    = os.environ.get("SUPABASE_ANON_KEY", "").strip()
+SUPABASE_SERVICE_KEY: str = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
 
 
 def get_anon_client() -> Client:
@@ -33,14 +33,11 @@ def get_service_client() -> Client:
 
 def get_user_client(access_token: str) -> Client:
     """
-    Returns a Supabase client with the user's JWT set.
-    RLS policies fire using this user's identity.
+    Returns a Supabase client with the user's JWT set for RLS queries.
     """
     client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
-    # set_session requires both access and refresh tokens
-    # We pass a dummy refresh token — we only need the access token for queries
     try:
-        client.postgrest.auth(access_token)
+        client.postgrest.auth(access_token.strip())
     except Exception:
         pass
     return client
