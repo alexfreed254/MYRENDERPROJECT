@@ -273,6 +273,32 @@ def update_attendance():
     return jsonify(success=True, message="Updated.")
 
 
+# ── Delete single attendance record ──────────────────────────────────────────
+
+@lecturer_bp.route("/delete-single-attendance", methods=["POST"])
+@trainer_required
+def delete_single_attendance():
+    db      = get_service_client()
+    trainer = _trainer_row()
+
+    att_id = request.form.get("att_id", type=int)
+    if not att_id:
+        return jsonify(success=False, message="Missing record ID.")
+
+    # Verify ownership before deleting
+    row = (db.table("attendance")
+             .select("trainer_id")
+             .eq("id", att_id)
+             .single()
+             .execute().data)
+    if not row or row["trainer_id"] != trainer["id"]:
+        return jsonify(success=False, message="Not authorised.")
+
+    db.table("attendance").delete().eq("id", att_id).execute()
+    write_audit_log("delete_single_attendance", detail={"att_id": att_id})
+    return jsonify(success=True, message="Record deleted.")
+
+
 # ── Delete lesson attendance ──────────────────────────────────────────────────
 
 @lecturer_bp.route("/delete-lesson", methods=["POST"])

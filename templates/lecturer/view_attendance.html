@@ -30,6 +30,14 @@
     .btn-danger  { background:#c62828; color:#fff; }
     .btn-pdf     { background:#c62828; color:#fff; }
     .action-row  { display:flex; gap:6px; flex-wrap:wrap; }
+    /* Confirm modal */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:1000; align-items:center; justify-content:center; }
+    .modal-overlay.open { display:flex; }
+    .modal-box { background:#fff; border-radius:12px; padding:28px 28px 22px; width:100%; max-width:400px; box-shadow:0 8px 32px rgba(0,0,0,0.2); }
+    .modal-box h3 { font-size:17px; margin-bottom:10px; color:#c62828; }
+    .modal-box p  { font-size:13px; color:#555; margin-bottom:20px; }
+    .modal-footer { display:flex; gap:10px; justify-content:flex-end; }
+    .delete-lesson-bar { background:#fff3e0; border:1px solid #ffcc80; border-radius:8px; padding:12px 18px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; font-size:13px; color:#e65100; }
   </style>
 </head>
 <body>
@@ -56,6 +64,17 @@
   {% endif %}
 
   {% if records %}
+
+  <!-- Delete Entire Lesson Bar -->
+  {% if class_id and unit_id and week and lesson %}
+  <div class="delete-lesson-bar">
+    <span><i class="fas fa-exclamation-triangle"></i> <strong>Wrong lesson?</strong> You can delete all attendance for this session and re-submit.</span>
+    <button class="btn btn-danger" onclick="openDeleteLesson()">
+      <i class="fas fa-trash-alt"></i> Delete Entire Lesson
+    </button>
+  </div>
+  {% endif %}
+
   <div class="card">
     <div class="card-header">
       <span><i class="fas fa-clipboard-list"></i> Attendance Records</span>
@@ -103,6 +122,11 @@
                     <i class="fas fa-check"></i> Mark Present
                   {% endif %}
                 </button>
+                <!-- Delete single record -->
+                <button onclick="openDeleteRecord({{ r.id }}, '{{ (r.students.full_name if r.students else 'this trainee') | e }}')"
+                        class="btn btn-danger">
+                  <i class="fas fa-trash"></i> Delete
+                </button>
               </div>
             </td>
           </tr>
@@ -127,6 +151,30 @@
 
 </div>
 
+<!-- Delete Single Record Modal -->
+<div class="modal-overlay" id="deleteRecordModal">
+  <div class="modal-box">
+    <h3><i class="fas fa-trash"></i> Delete Attendance Record</h3>
+    <p id="deleteRecordMsg">Are you sure you want to delete this attendance record?</p>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="closeDeleteRecord()">Cancel</button>
+      <button class="btn btn-danger" id="confirmDeleteRecord">Yes, Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Entire Lesson Modal -->
+<div class="modal-overlay" id="deleteLessonModal">
+  <div class="modal-box">
+    <h3><i class="fas fa-trash-alt"></i> Delete Entire Lesson</h3>
+    <p>This will permanently delete <strong>all attendance records</strong> for this session (Week {{ week }}, {{ lesson }}, Term {{ term }}, {{ year }}). The trainer can then re-submit attendance.</p>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="closeDeleteLesson()">Cancel</button>
+      <button class="btn btn-danger" id="confirmDeleteLesson">Yes, Delete All</button>
+    </div>
+  </div>
+</div>
+
 <script>
 function toggleStatus(attId, currentStatus, btn) {
   var newStatus = currentStatus === 'present' ? 'absent' : 'present';
@@ -146,6 +194,95 @@ function toggleStatus(attId, currentStatus, btn) {
     })
     .catch(() => { alert('Network error'); btn.disabled = false; });
 }
+
+// ── Delete single record ──────────────────────────────────────────────────────
+var _deleteRecordId = null;
+
+function openDeleteRecord(attId, studentName) {
+  _deleteRecordId = attId;
+  document.getElementById('deleteRecordMsg').textContent =
+    'Are you sure you want to delete the attendance record for ' + studentName + '? This cannot be undone.';
+  document.getElementById('deleteRecordModal').classList.add('open');
+}
+
+function closeDeleteRecord() {
+  _deleteRecordId = null;
+  document.getElementById('deleteRecordModal').classList.remove('open');
+}
+
+document.getElementById('confirmDeleteRecord').addEventListener('click', function() {
+  if (!_deleteRecordId) return;
+  var btn = this;
+  btn.disabled = true;
+  btn.textContent = 'Deleting…';
+  var form = new FormData();
+  form.append('att_id', _deleteRecordId);
+  fetch('/lecturer/delete-single-attendance', { method: 'POST', body: form })
+    .then(r => r.json())
+    .then(resp => {
+      if (resp.success) {
+        window.location.reload();
+      } else {
+        alert(resp.message || 'Delete failed');
+        btn.disabled = false;
+        btn.textContent = 'Yes, Delete';
+        closeDeleteRecord();
+      }
+    })
+    .catch(() => {
+      alert('Network error');
+      btn.disabled = false;
+      btn.textContent = 'Yes, Delete';
+      closeDeleteRecord();
+    });
+});
+
+// ── Delete entire lesson ──────────────────────────────────────────────────────
+function openDeleteLesson() {
+  document.getElementById('deleteLessonModal').classList.add('open');
+}
+
+function closeDeleteLesson() {
+  document.getElementById('deleteLessonModal').classList.remove('open');
+}
+
+document.getElementById('confirmDeleteLesson').addEventListener('click', function() {
+  var btn = this;
+  btn.disabled = true;
+  btn.textContent = 'Deleting…';
+  var form = new FormData();
+  form.append('unit_id', '{{ unit_id }}');
+  form.append('week',    '{{ week }}');
+  form.append('lesson',  '{{ lesson }}');
+  form.append('year',    '{{ year }}');
+  form.append('term',    '{{ term }}');
+  fetch('/lecturer/delete-lesson', { method: 'POST', body: form })
+    .then(r => r.json())
+    .then(resp => {
+      if (resp.success) {
+        window.location.href = '/lecturer/dashboard?class_id={{ class_id }}&unit_id={{ unit_id }}&week={{ week }}&lesson={{ lesson }}&year={{ year }}&term={{ term }}';
+      } else {
+        alert(resp.message || 'Delete failed');
+        btn.disabled = false;
+        btn.textContent = 'Yes, Delete All';
+        closeDeleteLesson();
+      }
+    })
+    .catch(() => {
+      alert('Network error');
+      btn.disabled = false;
+      btn.textContent = 'Yes, Delete All';
+      closeDeleteLesson();
+    });
+});
+
+// Close modals on overlay click
+document.getElementById('deleteRecordModal').addEventListener('click', function(e) {
+  if (e.target === this) closeDeleteRecord();
+});
+document.getElementById('deleteLessonModal').addEventListener('click', function(e) {
+  if (e.target === this) closeDeleteLesson();
+});
 </script>
 </body>
 </html>
