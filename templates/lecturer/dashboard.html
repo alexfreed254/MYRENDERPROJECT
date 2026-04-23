@@ -48,8 +48,8 @@
     /* Custom checkbox */
     .att-checkbox-wrap { display: flex; align-items: center; justify-content: center; width: 100%; }
     .att-checkbox-wrap input[type="checkbox"] { display: none; }
-    .att-checkbox-label { width: 56px; height: 56px; border: 3px solid #ccc; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; background: #fff; }
-    .att-checkbox-label i { font-size: 32px; opacity: 0; transition: opacity .2s; }
+    .att-checkbox-label { width: 30px; height: 30px; border: 2.5px solid #ccc; border-radius: 7px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; background: #fff; }
+    .att-checkbox-label i { font-size: 16px; opacity: 0; transition: opacity .2s; }
 
     /* Present checkbox */
     .att-checkbox-wrap.present input:checked + .att-checkbox-label { border-color: #27ae60; background: #e8f5e9; }
@@ -64,10 +64,10 @@
     .student-count-badge { background: #e3f2fd; color: #1e5a9f; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; float: right; }
 
     @media (max-width: 768px) {
-      .att-table-header { font-size: 14px; padding: 12px 14px; }
-      .att-checkbox-label { width: 48px; height: 48px; }
-      .att-checkbox-label i { font-size: 26px; }
-      .att-cell { padding: 12px; }
+      .att-table-header { font-size: 13px; padding: 10px 12px; }
+      .att-checkbox-label { width: 28px; height: 28px; }
+      .att-checkbox-label i { font-size: 14px; }
+      .att-cell { padding: 8px; }
     }
   </style>
 </head>
@@ -192,18 +192,7 @@
     {% endif %}
 
     {% if students_list %}
-    <!-- Quick select bar -->
-    <div style="padding:10px 16px;background:#f9f9f9;border-bottom:1px solid #eee;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-      <span style="font-size:12px;color:#666;font-weight:600;">Quick select:</span>
-      <button type="button" onclick="markAll('present')"
-        style="padding:5px 14px;background:#e8f5e9;color:#2e7d32;border:1.5px solid #27ae60;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">
-        <i class="fas fa-check"></i> All Present
-      </button>
-      <button type="button" onclick="markAll('absent')"
-        style="padding:5px 14px;background:#ffebee;color:#c62828;border:1.5px solid #e74c3c;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">
-        <i class="fas fa-times"></i> All Absent
-      </button>
-    </div>
+    <!-- no quick-select bar -->
     {% endif %}
 
     {% if not students_list %}
@@ -222,29 +211,34 @@
     </div>
 
     <!-- Column headers -->
-    <div style="display:grid;grid-template-columns:2fr 1fr 1fr;background:#1e5a9f;color:#fff;font-weight:700;font-size:14px;">
-      <div style="padding:14px 16px;">Student</div>
-      <div style="padding:14px 16px;text-align:center;border-left:1px solid rgba(255,255,255,.2);">
-        <i class="fas fa-check" style="color:#a5d6a7;margin-right:6px;"></i>Present
+    <div style="display:grid;grid-template-columns:1fr 2fr 80px 80px;background:#1e5a9f;color:#fff;font-weight:700;font-size:13px;">
+      <div style="padding:12px 14px;">Adm No.</div>
+      <div style="padding:12px 14px;border-left:1px solid rgba(255,255,255,.2);">Student Name</div>
+      <div style="padding:12px 8px;text-align:center;border-left:1px solid rgba(255,255,255,.2);">
+        <i class="fas fa-check" style="color:#a5d6a7;"></i><br><span style="font-size:11px;">Present</span>
       </div>
-      <div style="padding:14px 16px;text-align:center;border-left:1px solid rgba(255,255,255,.2);">
-        <i class="fas fa-times" style="color:#ef9a9a;margin-right:6px;"></i>Absent
+      <div style="padding:12px 8px;text-align:center;border-left:1px solid rgba(255,255,255,.2);">
+        <i class="fas fa-times" style="color:#ef9a9a;"></i><br><span style="font-size:11px;">Absent</span>
       </div>
     </div>
 
     <!-- Student rows -->
     {% for s in students_list %}
-    <div style="display:grid;grid-template-columns:2fr 1fr 1fr;border-bottom:1px solid #eee;background:#fff;transition:background .15s;"
+    <div style="display:grid;grid-template-columns:1fr 2fr 80px 80px;border-bottom:1px solid #eee;background:#fff;transition:background .15s;"
          onmouseover="this.style.background='#f8fbff'" onmouseout="this.style.background='#fff'">
 
-      <!-- Student info -->
-      <div style="padding:14px 16px;display:flex;flex-direction:column;justify-content:center;">
-        <span style="font-weight:600;font-size:14px;color:#333;">{{ s.full_name }}</span>
-        <span style="font-size:12px;color:#888;margin-top:2px;">{{ s.admission_number }}</span>
+      <!-- Admission number -->
+      <div style="padding:12px 14px;display:flex;align-items:center;font-weight:600;font-size:13px;color:#555;">
+        {{ s.admission_number }}
+      </div>
+
+      <!-- Student name -->
+      <div style="padding:12px 14px;display:flex;align-items:center;font-size:13px;color:#333;border-left:1px solid #eee;">
+        {{ s.full_name }}
       </div>
 
       <!-- Present checkbox -->
-      <div style="padding:12px;display:flex;align-items:center;justify-content:center;border-left:1px solid #eee;cursor:pointer;"
+      <div style="padding:10px 8px;display:flex;align-items:center;justify-content:center;border-left:1px solid #eee;cursor:pointer;"
            onclick="toggleCheckbox({{ s.id }}, 'present')">
         <div class="att-checkbox-wrap present">
           <input type="checkbox" id="present_{{ s.id }}" data-student-id="{{ s.id }}">
@@ -255,7 +249,7 @@
       </div>
 
       <!-- Absent checkbox (checked by default) -->
-      <div style="padding:12px;display:flex;align-items:center;justify-content:center;border-left:1px solid #eee;cursor:pointer;"
+      <div style="padding:10px 8px;display:flex;align-items:center;justify-content:center;border-left:1px solid #eee;cursor:pointer;"
            onclick="toggleCheckbox({{ s.id }}, 'absent')">
         <div class="att-checkbox-wrap absent">
           <input type="checkbox" id="absent_{{ s.id }}" data-student-id="{{ s.id }}" checked>
