@@ -19,11 +19,6 @@ auth_bp = Blueprint("auth", __name__)
 
 def _ensure_profile(user_id: str, email: str) -> dict:
     """
-    Returns the user_profiles row for user_id.
-    If it doesn't exist, creates a default 'student' row so login
-    never fails with 'Account not fully set up'.
-    The super admin can then promote the user via SQL.
-    """
     svc = get_service_client()
 
     # Try to fetch existing profile
@@ -50,6 +45,94 @@ def _ensure_profile(user_id: str, email: str) -> dict:
         print(f"[auth] _ensure_profile failed for {user_id}: {exc}")
         traceback.print_exc()
         return None
+
+
+# ── Student Login (admission number + password) ───────────────────────────────
+
+@auth_bp.route("/student-login", methods=["GET", "POST"])
+def student_login():
+    """Dedicated login for students using admission number instead of email."""
+    if request.method == "POST":
+        adm_number = request.form.get("admission_number", "").strip()
+        password   = request.form.get("password", "")
+
+        if not adm_number or not password:
+            return render_template("student/login.html",
+                                   error="Admission number and password are required.",
+                                   admission_number=adm_number)
+
+        svc = get_service_client()
+
+        # Look up the student's email by admission number
+        try:
+            rows = (svc.table("students")
+                       .select("email, user_id")
+                       .eq("admission_number", adm_number)
+                       .limit(1)
+                       .execute().data or [])
+        except Exception as exc:
+            return render_template("student/login.html",
+                                   error=f"Database error: {exc}",
+                                   admission_number=adm_number)
+
+        if not rows:
+            return render_template("student/login.html",
+                                   error="Admission number not found.",
+                                   admission_number=adm_number)
+
+        email = rows[0].get("email")
+        if not email:
+            return render_template("student/login.html",
+                                   error="Account not registered yet. Please register first.",
+                                   admission_number=adm_number)
+
+        # Authenticate via Supabase Auth
+        try:
+            client = get_anon_client()
+            resp   = client.auth.sign_in_with_password({"email": email, "password": password})
+        except Exception as exc:
+            msg = str(exc)
+            if any(k in msg.lower() for k in ["invalid login", "invalid credentials", "invalid"]):
+                return render_template("student/login.html",
+                                       error="Invalid admission number or password.",
+                                       admission_number=adm_number)
+            return render_template("student/login.html",
+                                   error=f"Login error: {msg}",
+                                   admission_number=adm_number)
+
+        if not resp or not resp.user:
+            return render_template("student/login.html",
+                                   error="Login failed. Please try again.",
+                                   admission_number=adm_number)
+
+        profile = _ensure_profile(resp.user.id, email)
+        if not profile:
+            return render_template("student/login.html",
+                                   error="Profile could not be loaded. Contact administrator.",
+                                   admission_number=adm_number)
+
+        if not profile.get("is_active", False):
+            return render_template("student/login.html",
+                                   error="Your account has been disabled.",
+                                   admission_number=adm_number)
+
+        session.permanent = bool(request.form.get("remember"))
+        session[SESSION_ACCESS]  = resp.session.access_token
+        session[SESSION_REFRESH] = resp.session.refresh_token
+        session[SESSION_USER] = {
+            "id":      resp.user.id,
+            "email":   resp.user.email,
+            "name":    profile.get("full_name") or adm_number,
+            "role":    "student",
+            "dept_id": profile.get("department_id"),
+            "active":  profile["is_active"],
+        }
+
+        write_audit_log("student_login", target=adm_number)
+        return redirect(url_for("student.dashboard"))
+
+    return render_template("student/login.html",
+                           registered=request.args.get("registered"))
 
 
 # ── Login ─────────────────────────────────────────────────────────────────────

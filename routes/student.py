@@ -100,7 +100,7 @@ def register():
                             "class_id":  class_id,
                         }).eq("id", student_row["id"]).execute()
                         write_audit_log("student_register", target=adm)
-                        return redirect(url_for("auth.login") + "?registered=1")
+                        return redirect(url_for("auth.student_login") + "?registered=1")
                 except Exception as exc:
                     error = f"Registration failed: {exc}"
 
