@@ -493,40 +493,85 @@ CREATE POLICY logs_super_admin_read ON system_logs
 -- ────────────────────────────────────────────────────────────
 -- 11. AUTO-CREATE user_profile ON SIGNUP
 --     Triggered by Supabase Auth new user event.
---     Default role is 'student'; admins must be promoted manually.
+--     Wrapped in EXCEPTION so a trigger failure never blocks
+--     user creation.  Role is validated before insert.
 -- ────────────────────────────────────────────────────────────
 
 CREATE OR REPLACE FUNCTION handle_new_auth_user()
-RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER AS $$
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_role      TEXT;
+    v_full_name TEXT;
 BEGIN
-    INSERT INTO user_profiles (id, full_name, role, is_active)
-    VALUES (
-        NEW.id,
-        COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.email),
-        COALESCE(NEW.raw_user_meta_data->>'role', 'student'),
-        TRUE
-    )
+    -- Safely read role from metadata; default to 'student'
+    v_role := COALESCE(
+        NULLIF(TRIM(NEW.raw_user_meta_data->>'role'), ''),
+        'student'
+    );
+
+    -- Clamp to valid values — never let bad metadata crash the trigger
+    IF v_role NOT IN ('super_admin','dept_admin','trainer','student') THEN
+        v_role := 'student';
+    END IF;
+
+    v_full_name := COALESCE(
+        NULLIF(TRIM(NEW.raw_user_meta_data->>'full_name'), ''),
+        NEW.email
+    );
+
+    INSERT INTO public.user_profiles (id, full_name, role, is_active)
+    VALUES (NEW.id, v_full_name, v_role, TRUE)
     ON CONFLICT (id) DO NOTHING;
+
+    RETURN NEW;
+EXCEPTION WHEN OTHERS THEN
+    -- Log the error but never block user creation
+    RAISE WARNING 'handle_new_auth_user failed for %: %', NEW.id, SQLERRM;
     RETURN NEW;
 END;
 $$;
 
+-- Drop and recreate trigger cleanly
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
     FOR EACH ROW EXECUTE FUNCTION handle_new_auth_user();
 
 -- ────────────────────────────────────────────────────────────
--- 12. SEED: INITIAL SUPER ADMIN
---     Replace the email/password with your real credentials.
---     Run ONCE after setting up Supabase Auth.
+-- 12. SEED: PROMOTE AN EXISTING USER TO SUPER ADMIN
+--
+-- STEP 1: Go to Supabase Dashboard → Authentication → Users
+--         Click "Add user" → enter email + password → Save
+--
+-- STEP 2: Copy the UUID shown in the users list
+--
+-- STEP 3: Run this block in SQL Editor (replace the UUID and name):
 -- ────────────────────────────────────────────────────────────
 
--- Step 1: Create the user via Supabase Auth Dashboard or API, then run:
--- (Replace 'YOUR-SUPER-ADMIN-UUID' with the UUID from auth.users)
+/*
+INSERT INTO public.user_profiles (id, full_name, role, department_id, is_active)
+VALUES (
+    'PASTE-UUID-HERE',   -- UUID from auth.users
+    'Super Admin',       -- display name
+    'super_admin',
+    NULL,
+    TRUE
+)
+ON CONFLICT (id) DO UPDATE
+    SET role      = 'super_admin',
+        is_active = TRUE;
+*/
 
--- INSERT INTO user_profiles (id, full_name, role, is_active)
--- VALUES ('YOUR-SUPER-ADMIN-UUID', 'Super Admin', 'super_admin', TRUE)
--- ON CONFLICT (id) DO UPDATE SET role = 'super_admin', is_active = TRUE;
+-- ── ALTERNATIVE: promote by email (run after user exists in auth.users) ──────
+/*
+UPDATE public.user_profiles
+SET    role = 'super_admin', is_active = TRUE
+WHERE  id = (
+    SELECT id FROM auth.users WHERE email = 'your-admin@email.com'
+);
+*/
 
 -- ────────────────────────────────────────────────────────────
 -- 13. USEFUL VIEWS
