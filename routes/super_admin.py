@@ -257,7 +257,7 @@ def system_logs():
     offset = (page - 1) * limit
     try:
         logs = (db.table("system_logs")
-                  .select("*, user_profiles(full_name, role)")
+                  .select("id, actor_id, actor_role, action, target, detail, ip_address, created_at")
                   .order("created_at", desc=True)
                   .range(offset, offset + limit - 1)
                   .execute().data or [])

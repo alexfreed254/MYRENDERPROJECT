@@ -5,13 +5,13 @@
 {% block extra_style %}
 .page-wrap { padding:24px; }
 .card { background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.06); overflow:hidden; }
-.card-header { background:#4a148c; color:#fff; padding:14px 20px; font-size:14px; font-weight:600; }
+.card-header { background:#1565c0; color:#fff; padding:14px 20px; font-size:14px; font-weight:600; }
 table { width:100%; border-collapse:collapse; font-size:12px; }
 th { background:#f5f5f5; padding:10px 14px; text-align:left; color:#555; border-bottom:2px solid #eee; }
 td { padding:10px 14px; border-bottom:1px solid #f5f5f5; vertical-align:top; }
-.action-badge { display:inline-block; background:#ede7f6; color:#4a148c; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600; }
+.action-badge { display:inline-block; background:#e3f2fd; color:#1565c0; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600; }
 .pager { display:flex; gap:12px; padding:16px 20px; justify-content:flex-end; }
-.pager a { padding:6px 14px; background:#7b1fa2; color:#fff; border-radius:6px; text-decoration:none; font-size:13px; }
+.pager a { padding:6px 14px; background:#1565c0; color:#fff; border-radius:6px; text-decoration:none; font-size:13px; }
 {% endblock %}
 
 {% block content %}
@@ -34,7 +34,7 @@ td { padding:10px 14px; border-bottom:1px solid #f5f5f5; vertical-align:top; }
           {% for log in logs %}
           <tr>
             <td style="white-space:nowrap;color:#888;">{{ log.created_at[:19].replace('T',' ') if log.created_at else '—' }}</td>
-            <td>{{ log.user_profiles.full_name if log.user_profiles else '—' }}</td>
+            <td>{{ log.actor_id[:8] ~ '…' if log.actor_id else '—' }}</td>
             <td>{{ log.actor_role or '—' }}</td>
             <td><span class="action-badge">{{ log.action }}</span></td>
             <td>{{ log.target or '—' }}</td>
