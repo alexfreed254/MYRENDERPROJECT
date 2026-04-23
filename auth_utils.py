@@ -33,9 +33,13 @@ def load_user_profile(user_id: str) -> Optional[dict]:
     """Fetch user_profiles row using the service client (bypasses RLS)."""
     try:
         svc = get_service_client()
-        res = svc.table("user_profiles").select("*").eq("id", user_id).single().execute()
-        return res.data if res.data else None
-    except Exception:
+        # Use limit(1) instead of .single() — .single() raises if row is missing
+        res = svc.table("user_profiles").select("*").eq("id", user_id).limit(1).execute()
+        if res.data and len(res.data) > 0:
+            return res.data[0]
+        return None
+    except Exception as exc:
+        print(f"[auth_utils] load_user_profile error for {user_id}: {exc}")
         return None
 
 
