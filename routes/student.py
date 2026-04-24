@@ -49,6 +49,8 @@ def register():
     error  = None
     db     = get_service_client()
     dept_id = request.args.get("dept_id", 0, type=int)
+    selected_class = 0
+    form_data = None
 
     if request.method == "POST":
         adm      = request.form.get("admission_number", "").strip()
@@ -57,6 +59,14 @@ def register():
         fullname = request.form.get("fullname", "").strip().upper()
         class_id = request.form.get("class_id", 0, type=int)
         dept_id  = request.form.get("dept_id", 0, type=int)
+
+        # Preserve form values on error
+        form_data = {
+            "fullname": request.form.get("fullname", ""),
+            "email": email,
+            "admission_number": adm,
+        }
+        selected_class = class_id
 
         if not all([adm, email, password, fullname, class_id]):
             error = "All fields are required."
@@ -105,19 +115,27 @@ def register():
                     error = f"Registration failed: {exc}"
 
     try:
+        import json
         depts = db.table("departments").select("*").order("name").execute().data or []
+        # Always load all classes for JS filtering
+        all_classes = db.table("classes").select("id, name, department_id").order("name").execute().data or []
+        # Pre-filter for initial display if dept selected
         if dept_id:
-            classes = (db.table("classes").select("*")
-                         .eq("department_id", dept_id).order("name")
-                         .execute().data or [])
+            classes = [c for c in all_classes if c["department_id"] == dept_id]
         else:
-            classes = db.table("classes").select("*").order("name").execute().data or []
+            classes = []
+        classes_json = json.dumps(all_classes)
     except Exception:
-        depts = []; classes = []
+        depts = []; classes = []; all_classes = []; classes_json = "[]"
 
     return render_template("student/register.html",
-                           error=error, classes=classes,
-                           departments=depts, dept_id=dept_id)
+                           error=error,
+                           classes=classes,
+                           classes_json=classes_json,
+                           departments=depts,
+                           dept_id=dept_id,
+                           selected_class=selected_class,
+                           form_data=form_data)
 
 
 # ── Dashboard ─────────────────────────────────────────────────────────────────

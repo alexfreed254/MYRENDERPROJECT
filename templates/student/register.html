@@ -4,65 +4,315 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Student Registration | TTTTI</title>
-  <link rel="stylesheet" href="/static/css/base.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(160deg, #0d2b6b 0%, #1a4a9f 50%, #0d2b6b 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 20px;
+    }
+
+    .card {
+      background: linear-gradient(180deg, #1a3a7a 0%, #152f6a 100%);
+      border-radius: 20px;
+      width: 100%;
+      max-width: 460px;
+      padding: 40px 36px 32px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    /* ── Logo & title ── */
+    .logo-wrap {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .logo-wrap img {
+      width: 86px;
+      height: 86px;
+      border-radius: 50%;
+      border: 3px solid rgba(255,255,255,0.3);
+      object-fit: cover;
+      background: #fff;
+    }
+
+    .logo-wrap h1 {
+      color: #fff;
+      font-size: 17px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 14px;
+      line-height: 1.3;
+    }
+
+    .logo-wrap p {
+      color: rgba(255,255,255,0.65);
+      font-size: 14px;
+      margin-top: 6px;
+    }
+
+    /* ── Error / success ── */
+    .error-box {
+      background: rgba(220,38,38,0.2);
+      border: 1px solid rgba(220,38,38,0.4);
+      color: #fca5a5;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    /* ── Input fields ── */
+    .input-wrap {
+      position: relative;
+      margin-bottom: 13px;
+    }
+
+    .input-wrap i {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: rgba(255,255,255,0.4);
+      font-size: 14px;
+      pointer-events: none;
+    }
+
+    /* icon alignment for select (vertically centered) */
+    .input-wrap.has-select i {
+      top: 50%;
+    }
+
+    .input-wrap input,
+    .input-wrap select {
+      width: 100%;
+      padding: 14px 16px 14px 44px;
+      background: rgba(255,255,255,0.08);
+      border: 1.5px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      color: #fff;
+      font-size: 14px;
+      transition: border-color .2s, background .2s;
+      outline: none;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+
+    .input-wrap input::placeholder { color: rgba(255,255,255,0.4); }
+
+    .input-wrap select option {
+      background: #1a3a7a;
+      color: #fff;
+    }
+
+    .input-wrap select option:disabled {
+      color: rgba(255,255,255,0.4);
+    }
+
+    .input-wrap input:focus,
+    .input-wrap select:focus {
+      border-color: rgba(255,255,255,0.4);
+      background: rgba(255,255,255,0.12);
+    }
+
+    /* dropdown arrow */
+    .input-wrap.has-select::after {
+      content: '\f107';
+      font-family: 'Font Awesome 6 Free';
+      font-weight: 900;
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: rgba(255,255,255,0.4);
+      pointer-events: none;
+      font-size: 13px;
+    }
+
+    .hint {
+      font-size: 11px;
+      color: rgba(255,255,255,0.45);
+      margin-top: 5px;
+      padding-left: 4px;
+    }
+
+    /* ── Register button ── */
+    .btn-register {
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(135deg, #e53935, #c62828);
+      color: #fff;
+      border: none;
+      border-radius: 50px;
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      cursor: pointer;
+      margin-top: 6px;
+      transition: filter .2s, transform .1s;
+      box-shadow: 0 4px 20px rgba(229,57,53,0.45);
+    }
+
+    .btn-register:hover  { filter: brightness(1.1); }
+    .btn-register:active { transform: scale(0.98); }
+
+    /* ── Footer links ── */
+    .footer-links {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 13px;
+      line-height: 2;
+    }
+
+    .footer-links a {
+      color: rgba(255,255,255,0.75);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color .2s;
+    }
+
+    .footer-links a:hover { color: #fff; }
+
+    .footer-links .sep { margin: 0 8px; opacity: 0.35; }
+
+    @media (max-width: 480px) {
+      .card { padding: 32px 20px 26px; }
+      .logo-wrap img { width: 74px; height: 74px; }
+      .logo-wrap h1 { font-size: 15px; }
+    }
+  </style>
 </head>
 <body>
-<div class="auth-page">
-  <div class="auth-box" style="max-width:480px;">
-    <div class="logo"><img src="{{ LOGO_URL }}" alt="Logo"></div>
-    <h1>Student Registration</h1>
-    {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
 
-    <form method="post" action="/student/register">
-      <input type="hidden" name="dept_id" value="{{ dept_id }}">
+<!-- Pass all classes as JSON for JS filtering -->
+<script>
+  const ALL_CLASSES = {{ classes_json | safe }};
+</script>
 
-      <div class="form-group">
-        <label>Full Name</label>
-        <input type="text" name="fullname" class="form-control" required>
-      </div>
-      <div class="form-group">
-        <label>Email</label>
-        <input type="email" name="email" class="form-control" required>
-      </div>
-      <div class="form-group">
-        <label>Admission Number</label>
-        <input type="text" name="admission_number" class="form-control" required>
-      </div>
-      <div class="form-group">
-        <label>Password</label>
-        <input type="password" name="password" class="form-control" required minlength="8">
-        <small style="color:#888;font-size:12px;">Min 8 characters, must include a number and a symbol (e.g. @, #, !)</small>
-      </div>
+<div class="card">
 
-      <!-- Department filter (reloads page to filter classes) -->
-      <div class="form-group">
-        <label>Department</label>
-        <select class="form-control" onchange="window.location='/student/register?dept_id='+this.value">
-          <option value="">-- Select Department --</option>
-          {% for d in departments %}
-            <option value="{{ d.id }}" {% if dept_id == d.id %}selected{% endif %}>{{ d.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label>Class</label>
-        <select name="class_id" class="form-control" required>
-          <option value="">-- Select Class --</option>
-          {% for c in classes %}
-            <option value="{{ c.id }}">{{ c.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <button type="submit" class="btn btn-warning" style="width:100%;">Register</button>
-    </form>
-
-    <div class="auth-footer">
-      Already registered? <a href="/student/login">Login here</a><br>
-      <a href="/" style="margin-top:8px;display:inline-block;">← Back to Home</a>
-    </div>
+  <div class="logo-wrap">
+    <img src="{{ LOGO_URL }}" alt="TTTTI Logo">
+    <h1>Thika Technical Training Institute</h1>
+    <p>Student Registration</p>
   </div>
+
+  {% if error %}
+  <div class="error-box">
+    <i class="fas fa-exclamation-circle" style="margin-top:2px;flex-shrink:0;"></i>
+    <span>{{ error }}</span>
+  </div>
+  {% endif %}
+
+  <form method="post" action="/student/register" id="regForm">
+
+    <!-- Department (first) -->
+    <div class="input-wrap has-select">
+      <i class="fas fa-building"></i>
+      <select id="dept_select" name="dept_id" required onchange="filterClasses(this.value)">
+        <option value="" disabled {% if not dept_id %}selected{% endif %}>-- Select Department --</option>
+        {% for d in departments %}
+          <option value="{{ d.id }}" {% if dept_id == d.id %}selected{% endif %}>{{ d.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Class (second, filtered by department) -->
+    <div class="input-wrap has-select" style="margin-bottom:18px;">
+      <i class="fas fa-door-open"></i>
+      <select id="class_select" name="class_id" required>
+        <option value="" disabled selected>-- Select Class --</option>
+        {% for c in classes %}
+          <option value="{{ c.id }}" {% if selected_class == c.id %}selected{% endif %}>{{ c.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Full Name -->
+    <div class="input-wrap">
+      <i class="fas fa-user"></i>
+      <input type="text" name="fullname" placeholder="Full Name"
+             value="{{ form_data.fullname if form_data else '' }}" required autocomplete="name">
+    </div>
+
+    <!-- Email -->
+    <div class="input-wrap">
+      <i class="fas fa-envelope"></i>
+      <input type="email" name="email" placeholder="Email Address"
+             value="{{ form_data.email if form_data else '' }}" required autocomplete="email">
+    </div>
+
+    <!-- Admission Number -->
+    <div class="input-wrap">
+      <i class="fas fa-id-card"></i>
+      <input type="text" name="admission_number" placeholder="Admission Number"
+             value="{{ form_data.admission_number if form_data else '' }}" required autocomplete="off">
+    </div>
+
+    <!-- Password -->
+    <div class="input-wrap">
+      <i class="fas fa-lock"></i>
+      <input type="password" name="password" placeholder="Password"
+             required autocomplete="new-password" minlength="8">
+    </div>
+    <p class="hint" style="margin-bottom:18px;">
+      <i class="fas fa-info-circle"></i>
+      Min 8 characters, must include a number and a symbol (e.g. @, #, !)
+    </p>
+
+    <button type="submit" class="btn-register">Register</button>
+  </form>
+
+  <div class="footer-links">
+    Already registered? <a href="/auth/student-login">Login here</a>
+    <br>
+    <a href="/"><i class="fas fa-arrow-left"></i> Back to Home</a>
+  </div>
+
 </div>
+
+<script>
+  function filterClasses(deptId) {
+    var sel = document.getElementById('class_select');
+    // Clear existing options
+    sel.innerHTML = '<option value="" disabled selected>-- Select Class --</option>';
+    if (!deptId) return;
+    var filtered = ALL_CLASSES.filter(function(c) {
+      return String(c.department_id) === String(deptId);
+    });
+    filtered.forEach(function(c) {
+      var opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = c.name;
+      sel.appendChild(opt);
+    });
+  }
+
+  // On page load, if a dept is already selected (e.g. after error), filter classes
+  (function() {
+    var deptSel = document.getElementById('dept_select');
+    if (deptSel.value) {
+      filterClasses(deptSel.value);
+      // Re-select the previously chosen class if any
+      var classId = "{{ selected_class or '' }}";
+      if (classId) {
+        document.getElementById('class_select').value = classId;
+      }
+    }
+  })();
+</script>
+
 </body>
 </html>
