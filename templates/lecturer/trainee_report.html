@@ -96,7 +96,7 @@
               <td>Term {{ r.term }}</td>
               <td><span class="badge badge-{{ r.status }}">{{ r.status.title() }}</span></td>
               <td style="font-size:12px;color:#888;">
-                {{ r.attendance_date[:10] if r.attendance_date else '—' }}
+                {{ r.attendance_date | to_eat('%d %b %Y') }}
               </td>
             </tr>
             {% endfor %}

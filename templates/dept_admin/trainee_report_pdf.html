@@ -84,7 +84,7 @@
         <td>Term {{ r.term }}</td>
         <td class="{{ r.status }}">{{ '✓ Present' if r.status == 'present' else '✗ Absent' }}</td>
         <td>{{ r.trainers.name if r.trainers else '—' }}</td>
-        <td>{{ r.attendance_date[:10] if r.attendance_date else '—' }}</td>
+        <td>{{ r.attendance_date | to_eat('%d %b %Y') }}</td>
       </tr>
       {% else %}
       <tr><td colspan="8" style="text-align:center;color:#aaa;padding:16px;">No records found.</td></tr>

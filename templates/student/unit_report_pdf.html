@@ -128,7 +128,7 @@
       <td class="{{ r.status }}">
         {{ '✓ Present' if r.status == 'present' else '✗ Absent' }}
       </td>
-      <td>{{ r.attendance_date[:10] if r.attendance_date else '—' }}</td>
+      <td>{{ r.attendance_date | to_eat('%d %b %Y') }}</td>
     </tr>
     {% else %}
     <tr>

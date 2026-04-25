@@ -59,6 +59,39 @@ def inject_globals():
         "current_user": current_user(),
     }
 
+# ── Jinja2 filter: convert UTC ISO string → EAT display string ───────────────
+import pytz
+from datetime import datetime as _dt
+
+_EAT = pytz.timezone('Africa/Nairobi')
+
+@app.template_filter('to_eat')
+def to_eat_filter(value, fmt='%d %b %Y %H:%M'):
+    """
+    Convert a UTC ISO datetime string (from Supabase) to EAT (Africa/Nairobi).
+    Usage in templates:  {{ r.attendance_date | to_eat }}
+                         {{ r.created_at | to_eat('%d %b %Y') }}
+    Returns '—' if value is falsy or unparseable.
+    """
+    if not value:
+        return '—'
+    try:
+        # Handle both 'Z' suffix and '+00:00' offset
+        s = str(value).replace('Z', '+00:00')
+        # Try with microseconds first, then without
+        for fmt_parse in ('%Y-%m-%dT%H:%M:%S.%f%z', '%Y-%m-%dT%H:%M:%S%z',
+                          '%Y-%m-%d %H:%M:%S.%f%z', '%Y-%m-%d %H:%M:%S%z'):
+            try:
+                utc_dt = _dt.strptime(s, fmt_parse)
+                eat_dt = utc_dt.astimezone(_EAT)
+                return eat_dt.strftime(fmt)
+            except ValueError:
+                continue
+        # Fallback: treat as naive local, just slice
+        return str(value)[:16].replace('T', ' ')
+    except Exception:
+        return str(value)[:16].replace('T', ' ')
+
 # ── Error handlers ────────────────────────────────────────────────────────────
 @app.errorhandler(400)
 def bad_request(e):

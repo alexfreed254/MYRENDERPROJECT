@@ -109,7 +109,7 @@
               </span>
             </td>
             <td style="font-size:12px;color:#888;white-space:nowrap">
-              {{ r.attendance_date[:16].replace('T',' ') if r.attendance_date else '—' }}
+              {{ r.attendance_date | to_eat }}
             </td>
             <td>
               <div class="action-row">

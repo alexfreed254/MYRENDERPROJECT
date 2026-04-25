@@ -77,7 +77,7 @@
               {% if r.status == 'present' %}✓ Present{% else %}✗ Absent{% endif %}
             </td>
             <td style="font-size:12px;color:#888;">
-              {% if r.attendance_date %}{{ r.attendance_date[:16] | replace('T', ' ') }}{% else %}—{% endif %}
+              {{ r.attendance_date | to_eat }}
             </td>
           </tr>
           {% endfor %}

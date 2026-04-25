@@ -33,7 +33,7 @@ td { padding:10px 14px; border-bottom:1px solid #f5f5f5; vertical-align:top; }
         <tbody>
           {% for log in logs %}
           <tr>
-            <td style="white-space:nowrap;color:#888;">{{ log.created_at[:19].replace('T',' ') if log.created_at else '—' }}</td>
+            <td style="white-space:nowrap;color:#888;">{{ log.created_at | to_eat('%d %b %Y %H:%M') }}</td>
             <td>{{ log.actor_id[:8] ~ '…' if log.actor_id else '—' }}</td>
             <td>{{ log.actor_role or '—' }}</td>
             <td><span class="action-badge">{{ log.action }}</span></td>

@@ -22,7 +22,7 @@
       <tbody>
         {% for r in records %}
         <tr>
-          <td style="white-space:nowrap;color:#888">{{ r.attendance_date[:10] if r.attendance_date else '—' }}</td>
+          <td style="white-space:nowrap;color:#888">{{ r.attendance_date | to_eat('%d %b %Y') }}</td>
           <td>{{ r.students.full_name if r.students else '—' }} ({{ r.students.admission_number if r.students else '' }})</td>
           <td>{{ r.units.code if r.units else '—' }}</td>
           <td>{{ r.trainers.name if r.trainers else '—' }}</td>

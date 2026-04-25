@@ -82,7 +82,7 @@ td{padding:10px 14px;border-bottom:1px solid #f5f5f5}
           <tr>
             <td style="color:#aaa">{{ loop.index }}</td>
             <td style="white-space:nowrap;color:#888;font-size:12px">
-              {{ r.attendance_date[:10] if r.attendance_date else '—' }}
+              {{ r.attendance_date | to_eat('%d %b %Y') }}
             </td>
             <td>{{ r.students.full_name if r.students else '—' }}</td>
             <td style="font-size:12px">{{ r.students.admission_number if r.students else '—' }}</td>
